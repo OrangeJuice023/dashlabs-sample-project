@@ -8,20 +8,17 @@ export const metadata: Metadata = {
     default: "Dashlabs Healthcare Data Science Showcase",
     template: "%s | Dashlabs Portfolio",
   },
-  description:
-    "How anonymized healthcare data becomes analytics and machine learning solutions. Built by the Dashlabs.ai Data Science team.",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Dashlabs Healthcare DS Showcase",
-  },
+  description: "How anonymized healthcare data becomes analytics and machine learning solutions.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen flex flex-col bg-white antialiased">
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </body>
+    </html>
+  );
+}
