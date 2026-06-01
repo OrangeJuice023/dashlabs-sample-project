@@ -1,56 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
+@config "../../tailwind.config.ts";
 
-/* ── CSS Variables (design tokens) ───────────────────── */
 :root {
-  /* Brand */
-  --color-indigo-500: #475175;
-  --color-indigo-400: #5D6690;
-  --color-indigo-300: #7484AD;
-  --color-indigo-200: #B8C2E3;
-  --color-indigo-100: #D7DCEE;
-
-  --color-blue-500:    #4273C0;
-  --color-blue-400:    #6C8FD6;
-  --color-blue-300:    #90ADE0;
-  --color-blue-200:    #BFD0F0;
-  --color-blue-100:    #ECF2FE;
-  --color-blue-legacy: #1566FF;
-
-  --color-gold-500:   #C7AA50;
-  --color-gold-400:   #D1B868;
-  --color-gold-300:   #E8D792;
-  --color-gold-200:   #F4EBB0;
-  --color-gold-100:   #F7F3DF;
-
-  --color-grey-500:   #3F3C39;
-  --color-grey-400:   #626058;
-  --color-grey-300:   #94928F;
-  --color-grey-200:   #BFC0BD;
-  --color-grey-100:   #E6E6E6;
-
-  /* Semantic */
-  --color-status-normal:   #27AE60;
-  --color-status-warning:  #C7AA50;
-  --color-status-critical: #C0392B;
-
-  /* Surfaces */
-  --color-surface:        #FFFFFF;
-  --color-surface-subtle: #FAFBFE;
-  --color-surface-dark:   #1A1F35;
-
-  /* Text */
-  --color-text-primary:   #1A1F35;
-  --color-text-secondary: #5A6173;
-  --color-text-muted:     #8B95B8;
-  --color-text-inverse:   #FFFFFF;
-
-  /* Typography */
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Roboto Mono", monospace;
 }
 
-/* ── Base reset ───────────────────────────────────────── */
 * {
   box-sizing: border-box;
   padding: 0;
@@ -64,47 +20,33 @@ html {
 }
 
 body {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  background-color: #ffffff;
+  color: #1A1F35;
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.7;
 }
 
-/* ── Reduced motion ───────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
 
-/* ── Selection color ──────────────────────────────────── */
 ::selection {
-  background-color: var(--color-blue-200);
-  color: var(--color-indigo-500);
+  background-color: #BFD0F0;
+  color: #475175;
 }
 
-/* ── Focus visible ────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-blue-legacy);
+  outline: 2px solid #1566FF;
   outline-offset: 3px;
   border-radius: 4px;
 }
 
-/* ── Scrollbar (subtle) ───────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-surface-subtle);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-indigo-200);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-indigo-400);
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #FAFBFE; }
+::-webkit-scrollbar-thumb { background: #D7DCEE; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #5D6690; }
