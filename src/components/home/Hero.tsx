@@ -34,7 +34,7 @@ export function Hero() {
         style={{ background: "radial-gradient(circle, #1566FF, transparent 70%)" }}
       />
 
-      <div className="relative max-w-[1200px] mx-auto px-6 pt-20 pb-28">
+      <div className="relative w-full max-w-[1200px] mx-auto px-8 md:px-12 pt-20 pb-28">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
