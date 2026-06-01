@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck } from "lucide-react";
-import { fadeUp, staggerContainer } from "@/lib/animations";
+import { fadeUp, staggerContainer, viewportConfig } from "@/lib/animations";
 
 const stats = [
   { value: "300+", label: "Healthcare Facilities" },
@@ -16,7 +16,7 @@ export function Hero() {
   return (
     <section className="relative bg-[#1A1F35] overflow-hidden">
 
-      {/* Subtle dot grid background */}
+      {/* Dot grid */}
       <div
         className="absolute inset-0 opacity-[0.035]"
         style={{
@@ -25,25 +25,25 @@ export function Hero() {
         }}
       />
 
-      {/* Gold accent bar at top */}
+      {/* Gold accent bar */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
 
-      {/* Blue glow — top left */}
+      {/* Blue glow */}
       <div
         className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.06]"
         style={{ background: "radial-gradient(circle, #1566FF, transparent 70%)" }}
       />
 
-      <div className="relative max-w-[1200px] mx-auto px-6 pt-24 pb-32">
+      <div className="relative max-w-[1200px] mx-auto px-6 pt-20 pb-28">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="max-w-[780px]"
+          className="max-w-[720px]"
         >
 
           {/* Eyebrow */}
-          <motion.div variants={fadeUp} className="mb-7">
+          <motion.div variants={fadeUp} className="mb-6">
             <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold tracking-[0.18em] text-[#8B95B8] uppercase">
               <ShieldCheck size={13} className="text-[#C7AA50]" />
               Healthcare Data Science Portfolio
@@ -53,7 +53,7 @@ export function Hero() {
           {/* Headline */}
           <motion.h1
             variants={fadeUp}
-            className="text-[3.25rem] md:text-[4rem] lg:text-[4.75rem] font-extrabold text-white leading-[1.07] tracking-tight mb-7"
+            className="text-[2.75rem] md:text-[3.5rem] lg:text-[4rem] font-extrabold text-white leading-[1.07] tracking-tight mb-6"
           >
             From raw healthcare data
             <br />
@@ -66,18 +66,15 @@ export function Hero() {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-[1.125rem] text-[#8B95B8] leading-relaxed max-w-[560px] mb-10"
+            className="text-[1.0625rem] text-[#8B95B8] leading-relaxed max-w-[520px] mb-10"
           >
             Nine end-to-end analytics and ML projects built on anonymized
             diagnostic lab data — demonstrating how healthcare operations
             data becomes actionable intelligence.
           </motion.p>
 
-          {/* CTA buttons */}
-          <motion.div
-            variants={fadeUp}
-            className="flex flex-wrap gap-3 mb-20"
-          >
+          {/* CTAs */}
+          <motion.div variants={fadeUp} className="flex flex-wrap gap-3 mb-20">
             <Link
               href="/projects"
               className="
@@ -101,7 +98,7 @@ export function Hero() {
             </Link>
           </motion.div>
 
-          {/* Stats row */}
+          {/* Stats */}
           <motion.div
             variants={fadeUp}
             className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-10 border-t border-[#475175]/40"
