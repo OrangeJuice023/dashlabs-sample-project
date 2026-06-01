@@ -1,7 +1,5 @@
-@import "tailwindcss";
-
-/* ── Google Fonts ─────────────────────────────────────── */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
 
 /* ── CSS Variables (design tokens) ───────────────────── */
 :root {
@@ -12,11 +10,11 @@
   --color-indigo-200: #B8C2E3;
   --color-indigo-100: #D7DCEE;
 
-  --color-blue-500:   #4273C0;
-  --color-blue-400:   #6C8FD6;
-  --color-blue-300:   #90ADE0;
-  --color-blue-200:   #BFD0F0;
-  --color-blue-100:   #ECF2FE;
+  --color-blue-500:    #4273C0;
+  --color-blue-400:    #6C8FD6;
+  --color-blue-300:    #90ADE0;
+  --color-blue-200:    #BFD0F0;
+  --color-blue-100:    #ECF2FE;
   --color-blue-legacy: #1566FF;
 
   --color-gold-500:   #C7AA50;
@@ -50,11 +48,6 @@
   /* Typography */
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Roboto Mono", monospace;
-
-  /* Spacing */
-  --section-padding: 6rem;
-  --section-padding-sm: 4rem;
-  --content-max-width: 1200px;
 }
 
 /* ── Base reset ───────────────────────────────────────── */
