@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
@@ -38,14 +37,9 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1566FF] rounded"
         >
-          <Image
-            src="/logo/dashlabs-blue.jpg"
-            alt="Dashlabs.ai"
-            width={140}
-            height={32}
-            className="h-8 w-auto object-contain"
-            priority
-          />
+          <span className="text-[#1566FF] font-bold text-xl tracking-tight">
+            Dashlabs.ai
+          </span>
         </Link>
 
         {/* Desktop nav */}
@@ -63,8 +57,6 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-
-          {/* CTA */}
           <Link
             href="/projects"
             className="
