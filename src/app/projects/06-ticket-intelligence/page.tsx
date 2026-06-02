@@ -1,3 +1,10 @@
+import { projects } from "@/content/projects";
+import { projectDetails } from "@/content/project-details";
+import { ProjectPageTemplate } from "@/components/project/ProjectPageTemplate";
+
+const project = projects.find(function f(p) { return p.slug === "06-ticket-intelligence"; })!;
+const detail = projectDetails["06-ticket-intelligence"];
+
 export default function Page() {
-  return <div className="p-12 text-[#475175] font-bold text-2xl">Coming soon: Support Ticket Intelligence</div>;
+  return <ProjectPageTemplate project={project} detail={detail} />;
 }
