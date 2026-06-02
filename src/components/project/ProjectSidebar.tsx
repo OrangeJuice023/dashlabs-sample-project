@@ -98,7 +98,7 @@ export function ProjectSidebar({ projectNumber, projectTitle }: ProjectSidebarPr
               href="/projects"
               className="flex items-center gap-2 text-[0.8125rem] text-[#8B95B8] hover:text-[#475175] transition-colors duration-150 cursor-pointer"
             >
-              <span className="text-lg leading-none">&larr;</span>
+              <span className="text-lg leading-none">←</span>
               All Projects
             </a>
           </div>
