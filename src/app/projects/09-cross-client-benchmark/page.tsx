@@ -1,7 +1,10 @@
+import { projects } from "@/content/projects";
+import { projectDetails } from "@/content/project-details";
+import { ProjectPageTemplate } from "@/components/project/ProjectPageTemplate";
+
+const project = projects.find(function f(p) { return p.slug === "09-cross-client-benchmark"; })!;
+const detail = projectDetails["09-cross-client-benchmark"];
+
 export default function Page() {
-  return (
-    <div className="p-12 text-[#475175] font-bold text-2xl">
-      Coming soon: Cross-Client Benchmarking
-    </div>
-  );
+  return <ProjectPageTemplate project={project} detail={detail} />;
 }
