@@ -19,7 +19,7 @@ export function Hero() {
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
       <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle, #1566FF, transparent 70%)" }} />
 
-      <div className="relative max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16 pt-28 pb-32">
+      <div className="relative max-w-[1200px] mx-auto px-[32px] md:px-[48px] lg:px-[64px] pt-[112px] pb-[128px]">
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-[760px]">
 
           <motion.div variants={fadeUp} className="mb-7">
