@@ -1,3 +1,10 @@
+import { projects } from "@/content/projects";
+import { projectDetails } from "@/content/project-details";
+import { ProjectPageTemplate } from "@/components/project/ProjectPageTemplate";
+
+const project = projects.find(function f(p) { return p.slug === "05-revenue-anomalies"; })!;
+const detail = projectDetails["05-revenue-anomalies"];
+
 export default function Page() {
-  return <div className="p-12 text-[#475175] font-bold text-2xl">Coming soon: Revenue Anomaly Detection</div>;
+  return <ProjectPageTemplate project={project} detail={detail} />;
 }
