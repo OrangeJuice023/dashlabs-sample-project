@@ -1,10 +1,21 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
-@config "../../tailwind.config.ts";
 
-:root {
+@theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Roboto Mono", monospace;
+
+  --color-brand: #1566FF;
+  --color-indigo-100: #D7DCEE;
+  --color-indigo-200: #B8C2E3;
+  --color-indigo-300: #7484AD;
+  --color-indigo-400: #5D6690;
+  --color-indigo-500: #475175;
+  --color-gold-100: #F7F3DF;
+  --color-gold-200: #F4EBB0;
+  --color-gold-300: #E8D792;
+  --color-gold-400: #D1B868;
+  --color-gold-500: #C7AA50;
 }
 
 * {
