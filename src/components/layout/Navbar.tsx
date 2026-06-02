@@ -43,28 +43,21 @@ export function Navbar() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="
-                px-4 py-2 rounded-md text-sm font-medium
-                text-[#5A6173] hover:text-[#475175] hover:bg-[#F7F8FC]
-                transition-colors duration-150 cursor-pointer
-              "
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden md:flex items-center">
+          <div className="flex items-center gap-1 mr-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="px-3 py-2 rounded-md text-sm font-medium text-[#5A6173] hover:text-[#475175] hover:bg-[#F7F8FC] transition-colors duration-150 cursor-pointer"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
           <Link
             href="/projects"
-            className="
-              ml-4 px-4 py-2 rounded-md text-sm font-semibold
-              bg-[#1566FF] text-white
-              hover:bg-[#4273C0] transition-colors duration-150
-              cursor-pointer
-            "
+            className="px-4 py-2 rounded-md text-sm font-semibold bg-[#1566FF] text-white hover:bg-[#4273C0] transition-colors duration-150 cursor-pointer"
           >
             View Projects
           </Link>
@@ -82,17 +75,13 @@ export function Navbar() {
 
       {/* Mobile nav */}
       {isMobileOpen && (
-        <div className="md:hidden border-t border-[#E6E6E6] bg-white px-6 py-4 flex flex-col gap-1">
+        <div className="md:hidden border-t border-[#E6E6E6] bg-white px-8 py-4 flex flex-col gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setIsMobileOpen(false)}
-              className="
-                px-4 py-3 rounded-md text-sm font-medium
-                text-[#5A6173] hover:text-[#475175] hover:bg-[#F7F8FC]
-                transition-colors duration-150 cursor-pointer
-              "
+              className="px-4 py-3 rounded-md text-sm font-medium text-[#5A6173] hover:text-[#475175] hover:bg-[#F7F8FC] transition-colors duration-150 cursor-pointer"
             >
               {link.label}
             </Link>
@@ -100,11 +89,7 @@ export function Navbar() {
           <Link
             href="/projects"
             onClick={() => setIsMobileOpen(false)}
-            className="
-              mt-2 px-4 py-3 rounded-md text-sm font-semibold text-center
-              bg-[#1566FF] text-white hover:bg-[#4273C0]
-              transition-colors duration-150 cursor-pointer
-            "
+            className="mt-2 px-4 py-3 rounded-md text-sm font-semibold text-center bg-[#1566FF] text-white hover:bg-[#4273C0] transition-colors duration-150 cursor-pointer"
           >
             View Projects
           </Link>
