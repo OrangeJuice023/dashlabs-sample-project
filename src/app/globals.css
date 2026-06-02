@@ -4,7 +4,6 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Roboto Mono", monospace;
-
   --color-brand: #1566FF;
   --color-indigo-100: #D7DCEE;
   --color-indigo-200: #B8C2E3;
@@ -16,12 +15,6 @@
   --color-gold-300: #E8D792;
   --color-gold-400: #D1B868;
   --color-gold-500: #C7AA50;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 html {
@@ -39,7 +32,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
