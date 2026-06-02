@@ -25,25 +25,22 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="bg-[#1A1F35] relative">
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
-        <div className="max-w-[1200px] mx-auto px-8 md:px-12 pt-16 pb-14">
-          <p className="font-mono text-[11px] font-semibold tracking-[0.18em] text-[#8B95B8] uppercase mb-4">
+        <div className="max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16 pt-20 pb-20">
+          <p className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[#8B95B8] uppercase mb-4">
             All Projects
           </p>
-          <h1 className="text-[2.5rem] md:text-[3rem] font-extrabold text-white leading-tight tracking-tight mb-4">
-            Nine ML projects.
-            <br />
-            One healthcare dataset.
+          <h1 className="text-[2.5rem] md:text-[3rem] font-extrabold text-white leading-[1.1] tracking-[-0.02em] mb-5">
+            Nine ML projects. One healthcare dataset.
           </h1>
-          <p className="text-[1.0625rem] text-[#8B95B8] max-w-[520px] leading-relaxed">
-            End-to-end analytics and machine learning projects built on
-            anonymized diagnostic lab data across five healthcare organizations.
+          <p className="text-[1.0625rem] text-[#8B95B8] max-w-[560px] leading-[1.7]">
+            End-to-end analytics and machine learning projects built on anonymized diagnostic lab data across five healthcare organizations.
           </p>
         </div>
       </div>
 
       {/* Grid */}
-      <div className="bg-[#FAFBFE] py-16">
-        <div className="max-w-[1200px] mx-auto px-8 md:px-12">
+      <div className="bg-[#FAFBFE] py-20">
+        <div className="max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16">
           <motion.div
             variants={staggerContainer}
             initial="hidden"
