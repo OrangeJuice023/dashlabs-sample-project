@@ -1,3 +1,4 @@
+```tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +8,7 @@ import { Menu, X } from "lucide-react";
 const navLinks = [
   { href: "/projects", label: "Projects" },
   { href: "/methodology", label: "Methodology" },
+  { href: "/instructions", label: "Instructions" },
   { href: "/about", label: "About" },
 ];
 
@@ -24,14 +26,14 @@ export function Navbar() {
     <header
       className={`
         sticky top-0 z-[400] w-full transition-all duration-300
-        ${isScrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-[#E6E6E6] shadow-sm"
-          : "bg-white border-b border-transparent"
+        ${
+          isScrolled
+            ? "bg-white/95 backdrop-blur-md border-b border-[#E6E6E6] shadow-sm"
+            : "bg-white border-b border-transparent"
         }
       `}
     >
       <div className="max-w-[1200px] mx-auto px-[32px] md:px-[48px] lg:px-[64px] h-16 flex items-center justify-between">
-
         {/* Logo */}
         <Link
           href="/"
@@ -98,3 +100,4 @@ export function Navbar() {
     </header>
   );
 }
+```
