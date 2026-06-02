@@ -25,7 +25,7 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="bg-[#1A1F35] relative">
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
-        <div className="max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16 pt-20 pb-20">
+        <div className="max-w-[1200px] mx-auto px-[32px] md:px-[48px] lg:px-[64px] pt-[80px] pb-[80px]">
           <p className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[#8B95B8] uppercase mb-4">
             All Projects
           </p>
@@ -40,7 +40,7 @@ export default function ProjectsPage() {
 
       {/* Grid */}
       <div className="bg-[#FAFBFE] py-20">
-        <div className="max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16">
+        <div className="max-w-[1200px] mx-auto px-[32px] md:px-[48px] lg:px-[64px]">
           <motion.div
             variants={staggerContainer}
             initial="hidden"
