@@ -30,7 +30,7 @@ export function Navbar() {
         }
       `}
     >
-      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16 h-16 flex items-center justify-between">
 
         {/* Logo */}
         <Link
