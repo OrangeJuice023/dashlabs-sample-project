@@ -23,7 +23,7 @@ export interface ProjectDetail {
     headline: string;
     description: string;
     kpis: { value: string; label: string; sub: string; color: string }[];
-    charts: { title: string; subtitle: string }[];
+    charts: { title: string; subtitle: string; data?: { label: string; value: number; n?: number }[] }[];
   };
   insights: {
     headline: string;
