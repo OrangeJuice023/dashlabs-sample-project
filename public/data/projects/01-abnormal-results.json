@@ -1,0 +1,33 @@
+{
+  "project": "01-abnormal-results",
+  "kpis": {
+    "auc_rf": 0.612,
+    "auc_logreg": 0.608,
+    "abnormal_rate_pct": 30.5,
+    "usable_labeled_rows": 784,
+    "label_coverage_pct": 20,
+    "clients": 6
+  },
+  "abnormal_by_service": [
+    {
+      "label": "Clinical Chemistry",
+      "value": 41.1,
+      "n": 146
+    },
+    {
+      "label": "Kimia Klinik",
+      "value": 36.7,
+      "n": 30
+    },
+    {
+      "label": "Hematologi",
+      "value": 32.6,
+      "n": 135
+    },
+    {
+      "label": "Hematology",
+      "value": 25.7,
+      "n": 452
+    }
+  ]
+}
