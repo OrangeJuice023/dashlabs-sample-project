@@ -1,33 +1,34 @@
 const codeSnippet = `from faker import Faker
 import hashlib, random
 
-fake = Faker()
-Faker.seed(42)
-random.seed(42)
+fake = Faker(); Faker.seed(42); random.seed(42)
 
-# Persistent maps: same real value always maps to same fake value
-name_map, branch_map, id_map = {}, {}, {}
+# Deny-by-default: classify each column by the SHAPE of its name.
+# Identifying columns are masked UNLESS explicitly kept, so unknown
+# identifier-like columns fail closed (masked), never open.
 
-def fake_name(real):
-    if real not in name_map:
-        name_map[real] = fake.name()
-    return name_map[real]
+KEEP = {"service_name", "product_name", "setting_name", "number_value",
+        "ref_range_min", "ref_range_max", "age", "sex", "civil_status"}
+DROP = {"barcode", "official_receipt_number", "notes", "city", "barangay"}
 
-def map_branch(real):
-    if real not in branch_map:
-        label = chr(65 + len(branch_map))   # A, B, C ...
-        branch_map[real] = "Branch " + label
-    return branch_map[real]
+def classify(col):
+    c = col.lower().strip()
+    if c in DROP or "birthday" in c or "dob" in c:  return "drop"   # DOB removed, age kept
+    if c in KEEP or c.endswith("_at") or c.endswith("_type"):  return "keep"
+    if "email" in c:    return "email"      # to Faker email
+    if "phone" in c:    return "phone"      # to Faker phone
+    if "address" in c:  return "address"    # to Faker address
+    if c.endswith("_id") or c.endswith("_ids"):  return "hash"   # to SHA-256[:12]
+    if "name" in c:     return "person"     # to Faker name
+    if "amount" in c:   return "jitter"     # value +/- 15%
+    return "keep"
 
-def hash_id(real):
-    if real not in id_map:
-        seed = "dashlabs-anon-" + str(real)
-        id_map[real] = hashlib.sha256(seed.encode()).hexdigest()[:12]
-    return id_map[real]
+# Consistent mapping: same real value -> same fake, so joins still work.
+def hash_id(v):
+    return hashlib.sha256(("dashlabs-anon-" + str(v)).encode()).hexdigest()[:12]
 
-def jitter_amount(value, pct=0.15):
-    factor = 1 + random.uniform(-pct, pct)
-    return round(float(value) * factor, 2)`;
+def jitter(v):
+    return round(float(v) * (1 + random.uniform(-0.15, 0.15)), 2)`;
 
 function SectionLabel(props: { number: string; label: string }) {
   return (
@@ -129,19 +130,19 @@ export default function InstructionsPage() {
             How the data is made safe.
           </h2>
           <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed mb-6">
-            You do not run this yourself, but you should understand what it does to the data you receive. The core logic is below. The full script lives in scripts/anonymize.py.
+            You do not run this yourself, but you should understand what it does to the data you receive. The pipeline classifies every column by the shape of its name and masks anything identifying — names, contacts, IDs, dates of birth — while keeping the fields your analysis needs. Crucially, it is deny-by-default: a column it does not recognize is masked, not let through. The core logic is below; the full script lives in scripts/anonymize.py.
           </p>
           <div className="rounded-xl bg-[#1A1F35] p-5 overflow-x-auto">
             <pre className="font-mono text-[12.5px] leading-[1.7] text-[#D7DCEE] whitespace-pre">{codeSnippet}</pre>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="p-5 rounded-xl bg-[#FAFBFE] border border-[#E6E6E6]">
-              <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">What gets masked</p>
-              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Names, phones, emails (Faker), branch and partner names (generic labels), all IDs (SHA-256 hashes), financial amounts (jittered).</p>
+              <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">What gets masked or dropped</p>
+              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Names, phones, emails (Faker), branch and partner names (generic labels), all IDs (SHA-256 hashes), financial amounts (jittered). Dates of birth and fine-grained location (city, barangay) are dropped entirely — age and coarse region are enough.</p>
             </div>
             <div className="p-5 rounded-xl bg-[#FAFBFE] border border-[#E6E6E6]">
               <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">What is preserved</p>
-              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Age, sex, civil status, timestamps, service names, test result values, reference ranges, statuses — everything your analysis actually needs.</p>
+              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Age, sex, civil status, timestamps, service names, test result values, reference ranges, statuses — everything your analysis actually needs. Free-text fields are kept but flagged for review, since they can contain stray names.</p>
             </div>
           </div>
         </section>
