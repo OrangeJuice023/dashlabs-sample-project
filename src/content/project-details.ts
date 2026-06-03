@@ -64,7 +64,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
       description: "No SMOTE, no leakage, no tuning to chase a number. Class imbalance is handled with balanced class weights and the result is reported as-is.",
       steps: [
         { step: "01", title: "Label Generation", desc: "is_abnormal = 1 when number_value falls outside [ref_range_min, ref_range_max]. Rows missing a value or a valid range are excluded." },
-        { step: "02", title: "Coverage Check", desc: "Only ~20% of result rows (784 of 4,000) had both a numeric value and a usable range. Low coverage is reported, not hidden." },
+        { step: "02", title: "Coverage Check", desc: "Only ~16% of result rows (801 of ~5,000) had both a numeric value and a usable range. Low coverage is reported, not hidden." },
         { step: "03", title: "Feature Join", desc: "Age and sex joined from the patients table on hashed patient_id; service_name and client retained as categoricals." },
         { step: "04", title: "Model Training", desc: "Logistic Regression and Random Forest, one-hot encoded categoricals, balanced class weights." },
         { step: "05", title: "Validation", desc: "5-fold stratified cross-validation, AUC-ROC as the primary metric. Reported with standard deviation across folds." },
@@ -72,12 +72,12 @@ export const projectDetails: Record<string, ProjectDetail> = {
     },
     analysis: {
       headline: "Real results: service type matters, demographics barely.",
-      description: "All figures below are computed from the anonymized data — 784 labeled results across 6 clients.",
+      description: "All figures below are computed from the anonymized data — 801 labeled results across 8 clients.",
       kpis: [
         { value: "0.61", label: "AUC-ROC", sub: "Random Forest, 5-fold CV", color: "#1566FF" },
-        { value: "30.5%", label: "Abnormal Rate", sub: "Pooled, 784 labeled rows", color: "#C7AA50" },
-        { value: "20%", label: "Label Coverage", sub: "Rows with value + valid range", color: "#C0392B" },
-        { value: "6", label: "Clients", sub: "With usable results", color: "#475175" },
+        { value: "30.2%", label: "Abnormal Rate", sub: "Pooled, 801 labeled rows", color: "#C7AA50" },
+        { value: "16%", label: "Label Coverage", sub: "Rows with value + valid range", color: "#C0392B" },
+        { value: "8", label: "Clients", sub: "With usable results", color: "#475175" },
       ],
       charts: [
         { title: "Abnormal Rate by Service Type", subtitle: "Percent of results flagged abnormal — services with n>=20", data: [
@@ -86,6 +86,15 @@ export const projectDetails: Record<string, ProjectDetail> = {
           { label: "Hematologi", value: 32.6, n: 135 },
           { label: "Hematology", value: 25.7, n: 452 },
         ] },
+      ],
+    },
+    insights: {
+      headline: "What the real numbers say.",
+      items: [
+        { title: "Predictability is modest, and that's the honest headline", desc: "AUC-ROC of ~0.61 means age, sex, service, and client only weakly predict abnormality. A higher number on this feature set would suggest leakage, not skill." },
+        { title: "Service type is the strongest signal", desc: "Clinical Chemistry results are abnormal 41% of the time versus 26% for Hematology — the kind of operational pattern worth acting on." },
+        { title: "Only 16% of results were labelable", desc: "Just 801 of ~5,000 result rows had both a numeric value and a valid reference range. Reference-range data quality is the real bottleneck for any production version." },
+        { title: "Multilingual schema is real", desc: "Indonesian service names (Hematologi, Kimia Klinik) sit alongside English ones, reflecting genuine cross-client data — and a real normalization challenge." },
       ],
     },
     future: {
@@ -482,7 +491,6 @@ export const projectDetails: Record<string, ProjectDetail> = {
     },
   },
 
-  
   "08-radiology-parser": {
     businessProblem: {
       headline: "Radiology impression parser — in development.",
@@ -536,67 +544,72 @@ export const projectDetails: Record<string, ProjectDetail> = {
 
   "09-cross-client-benchmark": {
     businessProblem: {
-      headline: "How do different healthcare organizations compare operationally — and what can they learn from each other?",
+      headline: "How do 13 healthcare organizations compare — once you make the data comparable at all?",
       paragraphs: [
-        "Dashlabs serves 300+ facilities, but each operates in isolation. No lab knows how their turnaround time, completion rate, or cancellation rate compares to similar organizations.",
-        "This project builds a cross-client benchmarking view that normalizes across currencies (PHP vs IDR), service naming, and operational differences to surface network-wide insights.",
+        "Each lab in the network operates in isolation, with no view of how its completion, cancellation, or abnormal-result rates compare to peers. This project pools 13 anonymized clients to build that comparison.",
+        "The first real finding is a humbling one: most of these metrics are not directly comparable until the schemas are aligned. Clients use different status vocabularies, so a naive completion-rate comparison is misleading. The honest version reports only what survives normalization.",
       ],
       cards: [
         { label: "Problem Type", value: "Comparative Analytics" },
-        { label: "Method", value: "Statistical Comparison + Normalization" },
-        { label: "Operational Value", value: "Network-wide visibility" },
+        { label: "Clients Pooled", value: "13 (samples)" },
+        { label: "Honest Caveat", value: "Schema alignment first" },
       ],
     },
     dataSources: {
-      headline: "All five clients, all five tables — normalized into one view.",
-      description: "The core challenge is schema alignment across clients with different naming conventions and currencies.",
+      headline: "Thirteen clients, the shared core tables, normalized into one view.",
+      description: "Per-client rates computed from anonymized patient_services (completion), orders (cancellation), and patient_service_results (abnormal). All figures are sample-based rates, not population counts.",
       tables: [
-        { name: "patient_services", fields: ["service_name", "status", "created_at", "locked_at"], note: "Completion and TAT metrics — all clients", primary: true },
-        { name: "orders", fields: ["total_amount", "total_discount", "is_cancelled"], note: "Revenue and cancellation metrics" },
-        { name: "patient_service_results", fields: ["number_value", "ref_range_min", "ref_range_max"], note: "Abnormal rates for quality comparison" },
+        { name: "patient_services", fields: ["status"], note: "Completion rate — but status vocabularies differ across clients", primary: true },
+        { name: "orders", fields: ["is_cancelled"], note: "Cancellation rate" },
+        { name: "patient_service_results", fields: ["number_value", "ref_range_min", "ref_range_max"], note: "Abnormal rate for quality comparison" },
       ],
     },
     methodology: {
-      headline: "Normalize, compare, contextualize.",
-      description: "Cross-client comparison requires careful normalization before any statistical test is valid.",
+      headline: "Normalize first, compare only what aligns.",
+      description: "The hard part is not the statistics — it is making 13 differently-structured exports mean the same thing before comparing them.",
       steps: [
-        { step: "01", title: "Schema Alignment", desc: "Map service names across clients. Standardize status values. Align timestamp formats." },
-        { step: "02", title: "Currency Normalization", desc: "Convert IDR (Hondo) to PHP-equivalent using operational exchange rates. Flag Hondo metrics separately." },
-        { step: "03", title: "KPI Computation", desc: "Per-client: completion rate, median TAT, cancellation rate, abnormal result rate, revenue per patient." },
-        { step: "04", title: "Statistical Comparison", desc: "ANOVA for continuous metrics, chi-square for categorical. Bonferroni correction for multiple comparisons." },
-        { step: "05", title: "Benchmarking Dashboard", desc: "Client-vs-network comparison with percentile ranking. Each client sees where they stand relative to peers." },
+        { step: "01", title: "Per-Client Rates", desc: "Completion = share of patient_services marked COMPLETED; cancellation = mean of orders.is_cancelled; abnormal = results outside reference range." },
+        { step: "02", title: "Vocabulary Check", desc: "Status labels are not standardized — some clients never use COMPLETED, so their raw completion rate reads near 0% despite normal operations." },
+        { step: "03", title: "Comparability Filter", desc: "Only clients with enough rows and aligned vocabularies are compared per metric (5 to 8 clients depending on the metric)." },
+        { step: "04", title: "Spread Analysis", desc: "Report min, max, and spread per metric across the comparable clients, with sample-size caveats." },
+        { step: "05", title: "Honest Framing", desc: "No currency normalization or volume ranking is attempted — sample caps make volume meaningless and amounts are jittered." },
       ],
     },
     analysis: {
-      headline: "Five organizations, one operational lens.",
-      description: "Placeholder — real benchmarks after all clients' anonymized data is processed.",
+      headline: "What actually compares — and what does not.",
+      description: "Computed across 13 anonymized clients. Completion rate is shown to be NOT cleanly comparable; abnormal and cancellation rates are.",
       kpis: [
-        { value: "5", label: "Clients Benchmarked", sub: "4 PH + 1 Indonesia", color: "#1566FF" },
-        { value: "2.1x", label: "TAT Spread", sub: "Fastest vs slowest client", color: "#C7AA50" },
-        { value: "94%", label: "Best Completion Rate", sub: "Top-performing client", color: "#27AE60" },
-        { value: "8.3%", label: "Avg Cancellation", sub: "Network average", color: "#C0392B" },
+        { value: "13", label: "Clients in Dataset", sub: "8 comparable on some metric", color: "#1566FF" },
+        { value: "2.8x", label: "Abnormal-Rate Spread", sub: "16.7% to 46.3% (5 clients)", color: "#C7AA50" },
+        { value: "6.8%", label: "Avg Cancellation", sub: "range 0% to 16% (6 clients)", color: "#475175" },
+        { value: "Schema", label: "Normalize First", sub: "completion not comparable until status labels align", color: "#C0392B" },
       ],
       charts: [
-        { title: "KPI Radar — All 5 Clients", subtitle: "Radar chart comparing 6 operational metrics" },
-        { title: "TAT Distribution by Client", subtitle: "Violin plot showing spread and median per organization" },
+        { title: "Abnormal Result Rate by Client", subtitle: "The cleanest comparable metric — clients with n>=20 labeled results", data: [
+          { label: "Client 08", value: 46.3 },
+          { label: "Client 02", value: 34.5 },
+          { label: "Client 01", value: 31.1 },
+          { label: "Client 05", value: 20.7 },
+          { label: "Client 11", value: 16.7 },
+        ] },
       ],
     },
     insights: {
-      headline: "What cross-client comparison reveals.",
+      headline: "What cross-client comparison really reveals.",
       items: [
-        { title: "Completion rates vary more by branch than by client", desc: "Within-client variation across branches is larger than between-client variation — the problem is local, not organizational." },
-        { title: "Indonesian vs Filipino operational patterns differ significantly", desc: "Hondo's service mix and TAT patterns are structurally different from PH clients, limiting direct comparison." },
-        { title: "The highest-volume client is not the fastest", desc: "Scale does not automatically equal efficiency. Smaller clients sometimes achieve better per-patient metrics." },
-        { title: "Limitation: anonymization masks client identity", desc: "Benchmarking value depends on clients knowing who they are. In this anonymized showcase, findings are illustrative." },
+        { title: "The headline finding is a data problem, not an ops ranking", desc: "Status vocabularies are not standardized: some clients never record COMPLETED, so their raw completion rate looks like 0 to 2% despite operating normally. Any benchmark must normalize labels first." },
+        { title: "Abnormal rates vary 2.8x across comparable clients", desc: "From 16.7% to 46.3% — a real, defensible spread even on samples, pointing to genuinely different case mixes or reference-range practices." },
+        { title: "Cancellation rates range from 0% to 16%", desc: "Wide variation across the six clients with usable order data, worth investigating per client." },
+        { title: "Limitation: samples plus anonymized identity = illustrative", desc: "500-row caps make volume comparisons meaningless, and anonymization hides which lab is which — so this demonstrates the method, not a production league table." },
       ],
     },
     future: {
       headline: "From showcase to product feature.",
       items: [
-        { title: "Benchmark Intelligence product", desc: "The strongest product opportunity: tell each lab how they compare to the network. No competitor has this data." },
-        { title: "Automated monthly benchmark reports", desc: "Scheduled per-client reports showing their percentile ranking across key metrics." },
-        { title: "Peer group matching", desc: "Compare labs to similar-sized peers rather than the full network for fairer benchmarks." },
-        { title: "Churn risk indicator", desc: "Clients whose metrics are deteriorating relative to the network may be at higher churn risk." },
+        { title: "Status vocabulary mapping", desc: "Build a canonical status taxonomy and map each client's labels into it — the prerequisite for any real benchmark." },
+        { title: "Benchmark Intelligence product", desc: "Once normalized, tell each lab where it stands versus peers. No competitor holds this cross-client data." },
+        { title: "Peer-group matching", desc: "Compare labs to similar-size peers rather than the whole network for fairer benchmarks." },
+        { title: "Full-population pull", desc: "Replace the 500-row samples with full exports so volume and revenue-per-patient become comparable too." },
       ],
     },
   },
