@@ -6,10 +6,10 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { fadeUp, staggerContainer } from "@/lib/animations";
 
 const stats = [
-  { value: "300+", label: "Healthcare Facilities" },
-  { value: "15M+", label: "Patients in Dataset" },
+  { value: "11", label: "Client Organizations" },
   { value: "9", label: "ML Projects" },
-  { value: "5", label: "Client Organizations" },
+  { value: "7", label: "Built on Real Data" },
+  { value: "100%", label: "Anonymized" },
 ];
 
 export function Hero() {
