@@ -1,0 +1,33 @@
+{
+  "project": "04-test-bundles",
+  "orders": 2677,
+  "multi_test_pct": 10,
+  "pairs_lift_gt_1_5": 18,
+  "pairs_by_confidence": [
+    {
+      "label": "FT3 + FT4",
+      "value": 100,
+      "n": 13
+    },
+    {
+      "label": "CHEM 10 + HbA1c",
+      "value": 52,
+      "n": 23
+    },
+    {
+      "label": "Creatinine + HbA1c",
+      "value": 50,
+      "n": 11
+    },
+    {
+      "label": "BUN + Creatinine",
+      "value": 27,
+      "n": 12
+    },
+    {
+      "label": "Basic 5 + ECG",
+      "value": 25,
+      "n": 14
+    }
+  ]
+}
