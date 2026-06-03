@@ -1,5 +1,5 @@
 "use client";
-
+import { BarChart } from "@/components/charts/BarChart";
 import { ProjectHero } from "@/components/project/ProjectHero";
 import { ProjectSidebar } from "@/components/project/ProjectSidebar";
 import type { ProjectMeta } from "@/lib/types";
@@ -106,6 +106,15 @@ export function ProjectPageTemplate({ project, detail }: { project: ProjectMeta;
                 })}
               </div>
               {detail.analysis.charts.map(function renderChart(c) {
+                if (c.data && c.data.length > 0) {
+                  return (
+                    <div key={c.title} className="rounded-xl border border-[#E6E6E6] bg-white p-6 mb-6">
+                      <p className="text-[0.9375rem] font-semibold text-[#475175] mb-1">{c.title}</p>
+                      <p className="text-sm text-[#8B95B8] mb-5">{c.subtitle}</p>
+                      <BarChart data={c.data} highlightTop={true} />
+                    </div>
+                  );
+                }
                 return (
                   <div key={c.title} className="rounded-xl border border-dashed border-[#B8C2E3] bg-[#FAFBFE] p-12 text-center mb-6">
                     <p className="font-mono text-[11px] text-[#8B95B8] uppercase tracking-widest mb-2">Chart Placeholder</p>
