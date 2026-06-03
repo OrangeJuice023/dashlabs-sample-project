@@ -11,7 +11,7 @@ export const projects: ProjectMeta[] = [
     clients: ["Upcare Diagnostics", "PUDC", "One Health Medical"],
     tables: ["patients", "patient_service_results", "patient_services"],
     techniques: ["Logistic Regression", "Random Forest", "XGBoost"],
-    keyMetric: { value: "87%", label: "AUC Score" },
+    keyMetric: { value: "0.61", label: "AUC-ROC (real)" },
     color: "bg-[#ECF2FE]",
   },
   {
