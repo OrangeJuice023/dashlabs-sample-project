@@ -6,7 +6,7 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { fadeUp, staggerContainer } from "@/lib/animations";
 
 const stats = [
-  { value: "11", label: "Client Organizations" },
+  { value: "13", label: "Client Organizations" },
   { value: "9", label: "ML Projects" },
   { value: "7", label: "Built on Real Data" },
   { value: "100%", label: "Anonymized" },
@@ -34,7 +34,7 @@ export function Hero() {
           </motion.h1>
 
           <motion.p variants={fadeUp} className="text-[1.125rem] text-[#8B95B8] leading-[1.7] max-w-[560px] mb-10">
-            Nine end-to-end analytics and ML projects built on anonymized diagnostic lab data — demonstrating how healthcare operations data becomes actionable intelligence.
+            End-to-end analytics and ML projects built on anonymized diagnostic lab data from 13 client organizations — demonstrating how healthcare operations data becomes actionable intelligence.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3 mb-24">
