@@ -80,16 +80,12 @@ export const projectDetails: Record<string, ProjectDetail> = {
         { value: "6", label: "Clients", sub: "With usable results", color: "#475175" },
       ],
       charts: [
-        { title: "Abnormal Rate by Service Type", subtitle: "Clinical Chemistry 41% vs Hematology 26% (n>=20)" },
-      ],
-    },
-    insights: {
-      headline: "What the real numbers say.",
-      items: [
-        { title: "Predictability is modest, and that's the honest headline", desc: "AUC-ROC of ~0.61 means age, sex, service, and client only weakly predict abnormality. A higher number on this feature set would suggest leakage, not skill." },
-        { title: "Service type is the strongest signal", desc: "Clinical Chemistry results are abnormal 41% of the time versus 26% for Hematology — the kind of operational pattern worth acting on." },
-        { title: "Only 20% of results were labelable", desc: "Just 784 of 4,000 result rows had both a numeric value and a valid reference range. Reference-range data quality is the real bottleneck for any production version." },
-        { title: "Multilingual schema is real", desc: "Indonesian service names (Hematologi, Kimia Klinik) sit alongside English ones, reflecting genuine cross-client data — and a real normalization challenge." },
+        { title: "Abnormal Rate by Service Type", subtitle: "Percent of results flagged abnormal — services with n>=20", data: [
+          { label: "Clinical Chemistry", value: 41.1, n: 146 },
+          { label: "Kimia Klinik", value: 36.7, n: 30 },
+          { label: "Hematologi", value: 32.6, n: 135 },
+          { label: "Hematology", value: 25.7, n: 452 },
+        ] },
       ],
     },
     future: {
