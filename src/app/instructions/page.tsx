@@ -93,7 +93,7 @@ export default function InstructionsPage() {
               You will never touch real client data.
             </p>
             <p className="text-[0.9375rem] text-[#5A6173] leading-relaxed mb-3">
-              All raw client data stays in a controlled environment. Gervi runs the anonymize.py pipeline on the real data, then shares only the anonymized CSV files with you. These have fake names, generic branch labels, hashed IDs, and jittered amounts — the analytical patterns are preserved, but nothing traces back to a real patient, physician, or facility.
+              All raw client data stays in a controlled environment. Gervi runs the anonymize.py pipeline on the real data, then shares only the anonymized CSV files with you. These have fake names, generic branch labels, hashed IDs, and jittered amounts — the analytical patterns are preserved, but nothing traces back to a real patient, physician, or facility. Anonymized files will be shared via a Google Drive link, organized per client (client_anon_01, client_anon_02, etc.). Forking the repository is optional — the Google Drive link is the primary deliverable.
             </p>
             <p className="text-[0.9375rem] text-[#5A6173] leading-relaxed">
               Build your entire analysis on the anonymized files only. Never request, download, or commit raw client exports.
