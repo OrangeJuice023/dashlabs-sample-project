@@ -1,0 +1,22 @@
+{
+  "project": "06-ticket-intelligence",
+  "tickets": 332,
+  "median_resolution_h": 9.0,
+  "by_priority": [
+    {
+      "label": "P2 (workaround)",
+      "value": 13.3,
+      "n": 50
+    },
+    {
+      "label": "P3 (normal)",
+      "value": 6.6,
+      "n": 88
+    },
+    {
+      "label": "P1 (no workaround)",
+      "value": 3.7,
+      "n": 8
+    }
+  ]
+}
