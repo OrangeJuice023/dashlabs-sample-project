@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { fadeUp, staggerContainer } from "@/lib/animations";
+import { HeroNetwork } from "@/components/home/HeroNetwork";
 
 const stats = [
   { value: "13", label: "Client Organizations" },
@@ -15,6 +16,7 @@ const stats = [
 export function Hero() {
   return (
     <section className="relative bg-[#1A1F35] overflow-hidden">
+      <HeroNetwork />
       <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
       <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle, #1566FF, transparent 70%)" }} />
