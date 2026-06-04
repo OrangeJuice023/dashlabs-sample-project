@@ -17,10 +17,10 @@ const tables = [
 ];
 
 const standards = [
-  { title: "Honest metrics only", desc: "Every reported metric comes from real model evaluation on held-out data. Where a model underperforms, the page says so." },
+  { title: "Honest metrics only", desc: "Every reported metric comes from real model evaluation on the anonymized data. Where a model underperforms — or where the data cannot support a project at all — the page says so plainly." },
   { title: "No data leakage", desc: "Features that would not be available at prediction time are excluded. Reference ranges, for example, are used only to create labels — never as model inputs." },
-  { title: "Stated limitations", desc: "Each project ends with an honest account of what the analysis cannot do and what a production deployment would require." },
-  { title: "Validation discipline", desc: "Stratified splits, cross-validation, and appropriate metrics for imbalanced problems (AUC-ROC, F1, silhouette) rather than accuracy alone." },
+  { title: "Stated limitations", desc: "Each project ends with an honest account of what the analysis cannot do. Several projects are explicitly marked limited or in development where the data does not support a real result." },
+  { title: "Validation discipline", desc: "Stratified splits, cross-validation, and metrics appropriate to each problem (AUC-ROC, MAE, lift, silhouette) rather than accuracy alone." },
 ];
 
 export default function MethodologyPage() {
@@ -49,10 +49,10 @@ export default function MethodologyPage() {
         <section>
           <SectionLabel number="01" label="The Data" />
           <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-4">
-            Five organizations, one shared schema.
+            Thirteen organizations, one shared schema.
           </h2>
           <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed mb-8">
-            The data comes from five diagnostic laboratory and clinic organizations across the Philippines and Indonesia. All of them share the same five-table data model, which makes cross-client analysis possible.
+            The data comes from thirteen diagnostic laboratory and clinic organizations across the Philippines and Indonesia. All of them share the same five-table data model, which is what makes cross-client analysis possible. The exports used here are anonymized samples, so the projects report rates and patterns rather than population totals.
           </p>
           <div className="space-y-3">
             {tables.map(function renderTable(t, i) {
@@ -72,19 +72,19 @@ export default function MethodologyPage() {
         <section>
           <SectionLabel number="02" label="Anonymization" />
           <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-4">
-            What is masked, and what is kept.
+            Deny by default: what is masked, dropped, and kept.
           </h2>
           <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed mb-6">
-            All data passes through a custom Python pipeline before any analysis. The goal is simple: remove everything that could identify a real person or organization, while preserving the statistical structure that makes the analysis meaningful.
+            All data passes through a custom Python pipeline before any analysis. It classifies every column by the shape of its name and is deny-by-default: anything that looks identifying is masked or dropped unless it is explicitly on the keep list. A column the script has never seen fails closed — masked, not let through. The goal is to remove everything that could identify a real person or organization while preserving the statistical structure that makes the analysis meaningful.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 rounded-xl bg-[#FAFBFE] border border-[#E6E6E6]">
-              <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">Removed or masked</p>
-              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Patient names, physician names, phone numbers, emails (replaced with realistic fakes). Branch and partner names become generic labels. All IDs are hashed. Financial amounts are jittered. Barcodes, receipts, and tax numbers are dropped entirely.</p>
+              <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">Masked or dropped</p>
+              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Patient, physician, and staff names, phones, and emails (replaced with realistic fakes). Branch and partner names become generic labels. All IDs are hashed. Financial amounts are jittered. Dates of birth and fine-grained location (city, barangay) are dropped entirely. Barcodes, receipts, and tax numbers are dropped.</p>
             </div>
             <div className="p-5 rounded-xl bg-[#FAFBFE] border border-[#E6E6E6]">
               <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">Preserved</p>
-              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Age, sex, civil status, all timestamps, service and test names, actual result values, reference ranges, and workflow statuses. These carry the analytical signal and contain no personal identifiers.</p>
+              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Age, sex, civil status, timestamps, service and test names, result values, reference ranges, and workflow statuses — the fields that carry the analytical signal. Free-text fields are kept but flagged for review, since clinical narrative can contain stray names that need a separate scrub before any public display.</p>
             </div>
           </div>
         </section>
@@ -122,7 +122,7 @@ export default function MethodologyPage() {
             Masking identifiers does not change the relationships in the data. A 60-year-old patient is still 60. An abnormal result is still abnormal. The time between sample collection and result is unchanged. Because the analytically meaningful fields are preserved, the models learn the same patterns they would on the raw data.
           </p>
           <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed">
-            The one deliberate exception is financial amounts, which are slightly jittered. This blurs exact peso figures while keeping distributions and anomalies intact — which is why the revenue anomaly project reports patterns rather than exact amounts.
+            The one deliberate exception is financial amounts, which are jittered by about 15%. This blurs exact peso figures while keeping distributions and outliers intact — which is why the revenue anomaly project reports patterns rather than exact amounts, and treats its results as illustrative.
           </p>
         </section>
 
