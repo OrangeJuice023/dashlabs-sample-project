@@ -1,0 +1,8 @@
+{
+  "project": "05-revenue-anomalies",
+  "orders": 418,
+  "iso_flag_pct": 2.2,
+  "any_discount_pct": 5,
+  "mean_discount_ratio_pct": 26,
+  "both_agree": 1
+}
