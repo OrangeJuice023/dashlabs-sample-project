@@ -13,6 +13,8 @@ export function HeroNetwork() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const cv: HTMLCanvasElement = canvas;
+    const c: CanvasRenderingContext2D = ctx;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -26,12 +28,12 @@ export function HeroNetwork() {
     let pulseTimer = 0;
 
     function resize() {
-      const rect = canvas.getBoundingClientRect();
+      const rect = cv.getBoundingClientRect();
       width = rect.width;
       height = rect.height;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cv.width = Math.floor(width * dpr);
+      cv.height = Math.floor(height * dpr);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
       const count = Math.max(18, Math.min(46, Math.floor((width * height) / 24000)));
       nodes = [];
       for (let i = 0; i < count; i++) {
@@ -67,7 +69,7 @@ export function HeroNetwork() {
     function draw(now: number) {
       const dt = last ? (now - last) / 1000 : 0;
       last = now;
-      ctx.clearRect(0, 0, width, height);
+      c.clearRect(0, 0, width, height);
 
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
@@ -86,12 +88,12 @@ export function HeroNetwork() {
           const d2 = dx * dx + dy * dy;
           if (d2 < LINK_DIST * LINK_DIST) {
             const a = (1 - Math.sqrt(d2) / LINK_DIST) * 0.18;
-            ctx.strokeStyle = "rgba(120,150,220," + a.toFixed(3) + ")";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.stroke();
+            c.strokeStyle = "rgba(120,150,220," + a.toFixed(3) + ")";
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(nodes[i].x, nodes[i].y);
+            c.lineTo(nodes[j].x, nodes[j].y);
+            c.stroke();
           }
         }
       }
@@ -102,10 +104,10 @@ export function HeroNetwork() {
         const beat = reduce ? 0 : Math.sin(t * 1.6 + n.phase);
         const r = 1.8 + (beat + 1) * 0.7;
         const glow = 0.35 + (beat + 1) * 0.18;
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(21,102,255," + glow.toFixed(3) + ")";
-        ctx.fill();
+        c.beginPath();
+        c.arc(n.x, n.y, r, 0, Math.PI * 2);
+        c.fillStyle = "rgba(21,102,255," + glow.toFixed(3) + ")";
+        c.fill();
       }
 
       if (!reduce) {
@@ -124,10 +126,10 @@ export function HeroNetwork() {
           const x = A.x + (B.x - A.x) * p.t;
           const y = A.y + (B.y - A.y) * p.t;
           const fade = Math.sin(Math.min(p.t, 1) * Math.PI);
-          ctx.beginPath();
-          ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(150,190,255," + (0.9 * fade).toFixed(3) + ")";
-          ctx.fill();
+          c.beginPath();
+          c.arc(x, y, 2.2, 0, Math.PI * 2);
+          c.fillStyle = "rgba(150,190,255," + (0.9 * fade).toFixed(3) + ")";
+          c.fill();
         }
       }
 
