@@ -1,0 +1,22 @@
+{
+  "project": "02-turnaround-time",
+  "measurable_clients": 3,
+  "pooled_median_min": 194,
+  "by_client": [
+    {
+      "label": "upcare",
+      "value": 366,
+      "n": 147
+    },
+    {
+      "label": "rg",
+      "value": 122,
+      "n": 272
+    },
+    {
+      "label": "healthway",
+      "value": 21,
+      "n": 77
+    }
+  ]
+}
