@@ -4,21 +4,17 @@ export type Difficulty = "Beginner" | "Intermediate" | "Advanced";
 
 export type ProjectStatus = "complete" | "in-progress" | "placeholder";
 
-export type DataClient =
-  | "Upcare Diagnostics"
-  | "PUDC"
-  | "One Health Medical"
-  | "ARDI Health Services"
-  | "Klinik dr. Hondo Supeno"
-  | "All Clients"
-  | "Kalix";
+// Synthetic site labels (data is fabricated — no real client names)
+export type DataClient = string;
 
 export type TableName =
   | "patients"
   | "orders"
   | "order_items"
   | "patient_services"
-  | "patient_service_results";
+  | "patient_service_results"
+  | "support_tickets"
+  | "soap_analytics";
 
 export interface ProjectMeta {
   slug: string;
@@ -34,7 +30,7 @@ export interface ProjectMeta {
     value: string;
     label: string;
   };
-  color: string; // tailwind bg class for card accent
+  color: string;
 }
 
 // ── Chart data types ───────────────────────────────────────────────────────
@@ -42,6 +38,7 @@ export interface ProjectMeta {
 export interface BarDataPoint {
   label: string;
   value: number;
+  n?: number;
   color?: string;
 }
 
@@ -64,39 +61,4 @@ export interface KPIData {
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   status?: "normal" | "warning" | "critical";
-}
-
-// ── Project page data shape ────────────────────────────────────────────────
-
-export interface ProjectData {
-  meta: ProjectMeta;
-  businessProblem: {
-    summary: string;
-    context: string[];
-    operationalImpact: string;
-  };
-  dataSources: {
-    clients: DataClient[];
-    tables: {
-      name: TableName;
-      fieldsUsed: string[];
-      notes?: string;
-    }[];
-    rowCount?: number;
-    dateRange?: string;
-  };
-  methodology: {
-    approach: string;
-    steps: string[];
-    models: string[];
-    validationMethod: string;
-  };
-  results: {
-    kpis: KPIData[];
-    charts: unknown[]; // populated per project
-    keyFindings: string[];
-    limitations: string[];
-  };
-  insights: string[];
-  futureImprovements: string[];
 }
