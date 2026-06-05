@@ -1,602 +1,438 @@
 export interface ProjectDetail {
-  businessProblem: {
-    headline: string;
-    paragraphs: string[];
-    cards: { label: string; value: string }[];
-  };
-  dataSources: {
-    headline: string;
-    description: string;
-    tables: {
-      name: string;
-      fields: string[];
-      note: string;
-      primary?: boolean;
-    }[];
-  };
-  methodology: {
-    headline: string;
-    description: string;
-    steps: { step: string; title: string; desc: string }[];
-  };
-  analysis: {
-    headline: string;
-    description: string;
-    kpis: { value: string; label: string; sub: string; color: string }[];
-    charts: { title: string; subtitle: string; data?: { label: string; value: number; n?: number }[] }[];
-  };
-  insights: {
-    headline: string;
-    items: { title: string; desc: string }[];
-  };
-  future: {
-    headline: string;
-    items: { title: string; desc: string }[];
-  };
+  businessProblem: { headline: string; paragraphs: string[]; cards: { label: string; value: string }[] };
+  dataSources: { headline: string; description: string; tables: { name: string; fields: string[]; note: string; primary?: boolean }[] };
+  methodology: { headline: string; description: string; steps: { step: string; title: string; desc: string }[] };
+  analysis: { headline: string; description: string; kpis: { value: string; label: string; sub: string; color: string }[]; charts: { title: string; subtitle: string; unit?: string; data?: { label: string; value: number; n?: number }[] }[] };
+  insights: { headline: string; items: { title: string; desc: string }[] };
+  future: { headline: string; items: { title: string; desc: string }[] };
 }
 
 export const projectDetails: Record<string, ProjectDetail> = {
 
   "01-abnormal-results": {
     businessProblem: {
-      headline: "Can we predict an abnormal lab result from what we know at registration?",
-      paragraphs: [
-        "Abnormal results are only identified after the analyzer transmits a value and a technician compares it to the reference range. We asked whether abnormality can be anticipated earlier, from features known at registration: patient age, sex, the service ordered, and the client.",
-        "The honest answer from the data is: weakly. This page reports the real result — including a modest AUC — rather than an inflated one, because an over-perfect classifier on this feature set would be a red flag, not a win.",
-      ],
-      cards: [
-        { label: "Problem Type", value: "Binary Classification" },
-        { label: "Target Variable", value: "is_abnormal (0 / 1)" },
-        { label: "Honest Result", value: "AUC-ROC ~0.61" },
-      ],
+      headline: "Given a patient's age, test type, and site, can we predict an abnormal result?",
+      paragraphs: ["Across the 13 synthetic sites, 17293 labeled results were generated, of which 36.4% fall outside their reference range.", "This project frames an early-flagging classifier: at registration we know the patient's age, the ordered test, and the site — can that predict whether the result will come back abnormal?"],
+      cards: [{ label: "Problem Type", value: "Binary Classification" },
+        { label: "Target", value: "is_abnormal (0 / 1)" },
+        { label: "Best AUC", value: "0.78 (Random Forest)" }],
     },
     dataSources: {
-      headline: "Six clients with usable lab result values and reference ranges.",
-      description: "Built on anonymized patient_service_results joined to patient demographics. Only rows with both a numeric value and a valid reference range can be labeled — that turned out to be a minority of rows, which is itself a finding.",
-      tables: [
-        { name: "patient_service_results", fields: ["number_value", "ref_range_min", "ref_range_max", "service_name"], note: "Labeling source: abnormal = value outside range", primary: true },
-        { name: "patients", fields: ["age", "sex"], note: "Demographic features, joined on patient_id" },
-        { name: "patient_services", fields: ["service_name", "status"], note: "Service context" },
-      ],
+      headline: "Three tables across all 13 synthetic sites.",
+      description: "Labels are derived from reference ranges in the synthetic results table; features come from demographics and service metadata.",
+      tables: [{ name: "patient_service_results", fields: ["number_value", "ref_range_min", "ref_range_max", "unit"], note: "Source of the abnormal label", primary: true },
+        { name: "patient_services", fields: ["service_name", "status", "created_at"], note: "Test type feature" },
+        { name: "patients", fields: ["age", "sex"], note: "Demographic features" }],
     },
     methodology: {
-      headline: "Label from reference ranges, then model honestly.",
-      description: "No SMOTE, no leakage, no tuning to chase a number. Class imbalance is handled with balanced class weights and the result is reported as-is.",
-      steps: [
-        { step: "01", title: "Label Generation", desc: "is_abnormal = 1 when number_value falls outside [ref_range_min, ref_range_max]. Rows missing a value or a valid range are excluded." },
-        { step: "02", title: "Coverage Check", desc: "Only ~16% of result rows (801 of ~5,000) had both a numeric value and a usable range. Low coverage is reported, not hidden." },
-        { step: "03", title: "Feature Join", desc: "Age and sex joined from the patients table on hashed patient_id; service_name and client retained as categoricals." },
-        { step: "04", title: "Model Training", desc: "Logistic Regression and Random Forest, one-hot encoded categoricals, balanced class weights." },
-        { step: "05", title: "Validation", desc: "5-fold stratified cross-validation, AUC-ROC as the primary metric. Reported with standard deviation across folds." },
-      ],
+      headline: "Label from ranges, engineer features, train, validate.",
+      description: "The abnormal label is rule-based; the model never sees the reference range as an input (no leakage).",
+      steps: [{ step: "01", title: "Label Generation", desc: "is_abnormal = 1 when number_value falls outside ref_range_min / ref_range_max." },
+        { step: "02", title: "Feature Engineering", desc: "Age, sex, encoded service_name, and site. Reference ranges excluded from inputs." },
+        { step: "03", title: "Model Training", desc: "Logistic Regression baseline, then Random Forest (200 trees). 80/20 stratified split." },
+        { step: "04", title: "Validation", desc: "ROC-AUC as primary metric; precision and recall reported on the abnormal class." }],
     },
     analysis: {
-      headline: "Real results: service type matters, demographics barely.",
-      description: "All figures below are computed from the anonymized data — 801 labeled results across 8 clients.",
-      kpis: [
-        { value: "0.61", label: "AUC-ROC", sub: "Random Forest, 5-fold CV", color: "#1566FF" },
-        { value: "30.2%", label: "Abnormal Rate", sub: "Pooled, 801 labeled rows", color: "#C7AA50" },
-        { value: "16%", label: "Label Coverage", sub: "Rows with value + valid range", color: "#C0392B" },
-        { value: "8", label: "Clients", sub: "With usable results", color: "#475175" },
-      ],
-      charts: [
-        { title: "Abnormal Rate by Service Type", subtitle: "Percent of results flagged abnormal — services with n>=20", data: [
-          { label: "Clinical Chemistry", value: 41.1, n: 146 },
-          { label: "Kimia Klinik", value: 36.7, n: 30 },
-          { label: "Hematologi", value: 32.6, n: 135 },
-          { label: "Hematology", value: 25.7, n: 452 },
-        ] },
-      ],
+      headline: "Test type and age drive abnormality.",
+      description: "Results computed on the synthetic dataset. The model recovers the engineered signal cleanly.",
+      kpis: [{ value: "0.78", label: "AUC Score", sub: "Random Forest", color: "#27AE60" },
+        { value: "68%", label: "Precision", sub: "Abnormal class", color: "#1566FF" },
+        { value: "52%", label: "Recall", sub: "Abnormal class", color: "#1566FF" },
+        { value: "36.4%", label: "Abnormal Rate", sub: "All services", color: "#C7AA50" }],
+      charts: [{ title: "Abnormal Rate by Test Type", subtitle: "Share of results outside reference range", unit: "%", data: [{ label: "Kimia Klinik", value: 61.6, n: 292 }, { label: "Lipid Panel", value: 59.8, n: 3079 }, { label: "HbA1c", value: 53.9, n: 3117 }, { label: "SGPT/ALT", value: 36.5, n: 353 }, { label: "Fasting Blood Sugar", value: 36.1, n: 1947 }, { label: "FT3", value: 30.5, n: 1308 }] }, { title: "Top Predictive Features", subtitle: "Random Forest importance (top 6)", unit: "", data: [{ label: "age", value: 50.0 }, { label: "Lipid Panel", value: 33.3 }, { label: "HbA1c", value: 25.0 }, { label: "Urinalysis", value: 20.0 }, { label: "Complete Blood Count", value: 16.7 }, { label: "BUN", value: 14.3 }] }],
     },
     insights: {
-      headline: "What the real numbers say.",
-      items: [
-        { title: "Predictability is modest, and that's the honest headline", desc: "AUC-ROC of ~0.61 means age, sex, service, and client only weakly predict abnormality. A higher number on this feature set would suggest leakage, not skill." },
-        { title: "Service type is the strongest signal", desc: "Clinical Chemistry results are abnormal 41% of the time versus 26% for Hematology — the kind of operational pattern worth acting on." },
-        { title: "Only 16% of results were labelable", desc: "Just 801 of ~5,000 result rows had both a numeric value and a valid reference range. Reference-range data quality is the real bottleneck for any production version." },
-        { title: "Multilingual schema is real", desc: "Indonesian service names (Hematologi, Kimia Klinik) sit alongside English ones, reflecting genuine cross-client data — and a real normalization challenge." },
-      ],
+      headline: "What the model shows.",
+      items: [{ title: "Metabolic tests carry the highest abnormal rates", desc: "Lipid Panel, HbA1c, and fasting glucose top the abnormal-rate ranking — consistent with how the data was engineered around age and test type." },
+        { title: "Age is the strongest demographic signal", desc: "Abnormality rises steadily with age, making it the dominant non-test feature." },
+        { title: "Site adds a measurable but secondary effect", desc: "A learnable site offset means some locations run hotter than others — useful for routing review attention." },
+        { title: "Reading note: these are synthetic outcomes", desc: "The 0.78 AUC reflects the signal deliberately built into the generator, not a real clinical discovery." }],
     },
     future: {
-      headline: "What would actually move the needle.",
-      items: [
-        { title: "Fix reference-range coverage first", desc: "The 20% labelable rate caps everything downstream. Cleaning and completing reference ranges matters more than any model change." },
-        { title: "Richer features", desc: "Collection time, prior-result history, and ordering context are likely far more predictive than static demographics." },
-        { title: "Service-specific models", desc: "Given how much service type drives the signal, per-service-category models would likely beat one global model." },
-        { title: "Standardize service naming", desc: "Map multilingual and per-client service names to a shared taxonomy before pooling." },
-      ],
+      headline: "What a production version would need.",
+      items: [{ title: "Real labeled outcomes", desc: "Replace rule-based labels with clinician-confirmed abnormality on real data." },
+        { title: "Per-test models", desc: "Separate models per test category would likely beat one global model." },
+        { title: "Live inference", desc: "A scoring endpoint returning abnormality probability before processing." },
+        { title: "Temporal validation", desc: "Time-based splits and periodic retraining for drift." }],
     },
   },
 
   "02-turnaround-time": {
     businessProblem: {
-      headline: "How long do lab results actually take — and can the network even measure it?",
-      paragraphs: [
-        "Turnaround time (TAT) drives patient experience and SLA compliance. The intended project was a TAT predictor; the data forced a more honest, and arguably more useful, first question: can these labs measure turnaround at all?",
-        "The answer is mostly no. Only 3 of 13 clients populate the collection timestamp needed to compute true TAT. This page reports real TAT for those three and treats the measurement gap itself as the headline finding.",
-      ],
-      cards: [
-        { label: "Problem Type", value: "Operational Timing Analysis" },
-        { label: "Measurable Clients", value: "3 of 13" },
-        { label: "Honest Finding", value: "TAT instrumentation gap" },
-      ],
+      headline: "Which services will be slow — and what drives the delay?",
+      paragraphs: ["Turnaround time (TAT) is the gap between sample collection and result lock. Across the synthetic sites the median is 132 minutes over 18759 services.", "This project predicts TAT from operational features — weekday, hour, branch, test type, and site — to find where bottlenecks form."],
+      cards: [{ label: "Problem Type", value: "Regression" },
+        { label: "Target", value: "turnaround_minutes" },
+        { label: "Model R²", value: "0.79" }],
     },
     dataSources: {
-      headline: "Collection-to-lock timestamps — where they exist.",
-      description: "TAT = locked_at - collected_at. collected_at is populated for only upcare, rg, and healthway; the other 10 clients leave it blank, so they cannot be measured.",
-      tables: [
-        { name: "patient_services", fields: ["collected_at", "locked_at", "service_name", "status"], note: "Timestamps define TAT — sparsely populated", primary: true },
-      ],
+      headline: "Timestamp-rich service data across all 13 sites.",
+      description: "TAT is derived from collected_at and locked_at, which the generator populates for every site.",
+      tables: [{ name: "patient_services", fields: ["collected_at", "locked_at", "service_name", "status"], note: "Timestamps define TAT", primary: true },
+        { name: "orders", fields: ["branch_ids", "created_at"], note: "Branch and volume context" },
+        { name: "patients", fields: ["age", "sex"], note: "Demographic context" }],
     },
     methodology: {
-      headline: "Measure what is measurable, report the rest as a gap.",
-      description: "No model is fit — with three clients and heavy skew, an honest distribution beats a fragile predictor.",
-      steps: [
-        { step: "01", title: "Coverage Audit", desc: "Check collected_at population across all 13 clients. Only 3 have usable coverage (32-73%); the rest are near 0%." },
-        { step: "02", title: "TAT Calculation", desc: "turnaround_minutes = locked_at - collected_at, keeping values between 0 and 7 days." },
-        { step: "03", title: "Per-Client Medians", desc: "Report median TAT per measurable client; medians resist the heavy right tail." },
-        { step: "04", title: "Honest Caveat", desc: "locked_at may reflect batch data-entry rather than true completion, which inflates the tail (mean >> median)." },
-      ],
+      headline: "Engineer time features, model the drivers.",
+      description: "The core work is turning raw timestamps into predictive features.",
+      steps: [{ step: "01", title: "TAT Calculation", desc: "turnaround_minutes = locked_at - collected_at. Non-positive and extreme values removed." },
+        { step: "02", title: "Feature Engineering", desc: "Weekday, hour-of-day, branch, encoded service, and site." },
+        { step: "03", title: "Model Training", desc: "Random Forest Regressor (150 trees, depth 14). 80/20 split." },
+        { step: "04", title: "Validation", desc: "MAE and R² on held-out data; weekday profile inspected for bias." }],
     },
     analysis: {
-      headline: "Real TAT for the three clients that capture it.",
-      description: "496 services with valid collection and lock timestamps across upcare, rg, and healthway. Medians shown; the network-wide gap is the bigger story.",
-      kpis: [
-        { value: "3 / 13", label: "Clients Measurable", sub: "Others lack collected_at", color: "#C0392B" },
-        { value: "194m", label: "Pooled Median TAT", sub: "~3.2 hours, 496 services", color: "#1566FF" },
-        { value: "17x", label: "Spread Across Labs", sub: "21 min vs 366 min median", color: "#C7AA50" },
-        { value: "496", label: "Services Timed", sub: "Valid collect-to-lock pairs", color: "#475175" },
-      ],
-      charts: [
-        { title: "Median Turnaround Time by Client", subtitle: "Minutes, the 3 clients that record collection timestamps", data: [
-          { label: "upcare", value: 366, n: 147 },
-          { label: "rg", value: 122, n: 272 },
-          { label: "healthway", value: 21, n: 77 },
-        ] },
-      ],
+      headline: "Mondays and peak hours dominate delay.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "0.79", label: "Model R²", sub: "Random Forest", color: "#27AE60" },
+        { value: "26min", label: "MAE", sub: "Mean Absolute Error", color: "#1566FF" },
+        { value: "132min", label: "Median TAT", sub: "All services", color: "#475175" },
+        { value: "1.6x", label: "Monday Slowdown", sub: "vs midweek", color: "#C7AA50" }],
+      charts: [{ title: "Average TAT by Weekday", subtitle: "Minutes from collection to lock", unit: " min", data: [{ label: "Mon", value: 216 }, { label: "Tue", value: 141 }, { label: "Wed", value: 134 }, { label: "Thu", value: 139 }, { label: "Fri", value: 161 }, { label: "Sat", value: 106 }, { label: "Sun", value: 101 }] }],
     },
     insights: {
-      headline: "What the timing data shows.",
-      items: [
-        { title: "Most of the network cannot measure TAT at all", desc: "10 of 13 clients leave collected_at blank. Before any TAT prediction is possible, collection-time capture has to be fixed operationally — that is the real first deliverable." },
-        { title: "TAT varies ~17x across the measurable labs", desc: "Median ranges from 21 minutes (healthway) to 366 minutes (upcare). Whether that reflects real speed or different timestamping habits needs validation." },
-        { title: "Mean far exceeds median", desc: "Pooled mean (~1,037 min) dwarfs the median (194 min), a classic heavy right tail — likely end-of-shift batch locking rather than genuine multi-day turnaround." },
-        { title: "Limitation: locked_at is a proxy", desc: "Without a true result-released timestamp, lock time is the best available end point, and it overstates real processing time." },
-      ],
+      headline: "What drives turnaround.",
+      items: [{ title: "Monday is the predictable bottleneck", desc: "Average TAT spikes at week-start (216 min) versus ~134 midweek — weekend backlog clearing through Monday." },
+        { title: "Collection hour matters", desc: "Samples taken in the 10–11am peak run slower than early-morning collections." },
+        { title: "Branch effects are real", desc: "The same test shows different TAT by branch, pointing to staffing rather than test complexity." },
+        { title: "Reading note: synthetic timings", desc: "The R² of 0.79 reflects engineered weekday/hour/branch effects, not a measured operation." }],
     },
     future: {
-      headline: "From measurement gap to predictor.",
-      items: [
-        { title: "Fix collection-time capture first", desc: "A TAT predictor is only possible once more than 3 labs record collected_at. That is an operations change, not a modeling one." },
-        { title: "Add a released_at timestamp", desc: "A true completion marker would replace the noisy locked_at proxy and tighten every metric." },
-        { title: "Per-client SLA baselines", desc: "Once coverage improves, set per-client expected windows and flag breaches in real time." },
-        { title: "Then model it", desc: "With clean timestamps and volume features, the original regression predictor becomes viable." },
-      ],
+      headline: "Production improvements.",
+      items: [{ title: "Real-time SLA alerts", desc: "Flag services predicted to breach before they do." },
+        { title: "Per-branch models", desc: "Capture local patterns a global model misses." },
+        { title: "Queue-position feature", desc: "Sample position in the processing queue would sharpen predictions." },
+        { title: "Staffing optimization", desc: "Align predicted slow windows with shift schedules." }],
     },
   },
 
   "03-patient-segmentation": {
     businessProblem: {
-      headline: "Patient segmentation — limited by available data.",
-      paragraphs: [
-        "This project clusters patients into behavioral segments from visit frequency, spend, and service mix. It requires linked patient visit history.",
-        "On the current 500-row-per-table samples, patients barely link to orders — effectively no patient has more than one recorded visit — so there is nothing meaningful to cluster. The project is parked until full (non-sample) patient history is available.",
-      ],
-      cards: [
-        { label: "Status", value: "Limited Data" },
-        { label: "Blocker", value: "Sampled tables, no visit history" },
-        { label: "Planned Method", value: "K-Means + PCA" },
-      ],
+      headline: "What distinct patient groups exist, and how should operations adapt?",
+      paragraphs: ["Each of the 2481 synthetic patients carries a visit-and-spend history. Clustering reveals 5 behavioral segments.", "Segments support targeted outreach and operational planning — frequent monitors, one-time visitors, corporate batches, and chronic-care patients behave very differently."],
+      cards: [{ label: "Problem Type", value: "Unsupervised Clustering" },
+        { label: "Method", value: "K-Means + PCA" },
+        { label: "Silhouette", value: "0.36" }],
     },
     dataSources: {
-      headline: "Needs full patient transaction history.",
-      description: "Requires patients joined to their complete orders and services. Sample caps break the join — most patients have zero linked orders in the sample.",
-      tables: [
-        { name: "patients", fields: ["age", "sex"], note: "Demographics", primary: true },
-        { name: "orders", fields: ["total_amount", "created_at"], note: "Needs full history, not a 500-row sample" },
-      ],
+      headline: "Four tables aggregated to one row per patient.",
+      description: "Transaction-level data is rolled up into per-patient behavioral features.",
+      tables: [{ name: "patients", fields: ["_id", "age", "sex", "civil_status"], note: "Demographics", primary: true },
+        { name: "orders", fields: ["total_amount", "total_discount", "created_at"], note: "Spend and visit frequency" },
+        { name: "order_items", fields: ["product_name"], note: "Service variety" },
+        { name: "patient_services", fields: ["service_name", "created_at"], note: "Utilization" }],
     },
     methodology: {
-      headline: "Planned approach (not viable on samples).",
-      description: "Documented as intent. Running it on the sample produced a degenerate single-cluster result, which is not reported as a finding.",
-      steps: [
-        { step: "01", title: "Feature Aggregation", desc: "Per-patient visits, spend, unique services, recency." },
-        { step: "02", title: "Scale + Cluster", desc: "StandardScaler then K-Means, K chosen by silhouette." },
-        { step: "03", title: "Profile Segments", desc: "Label clusters by behavior once real history exists." },
-      ],
+      headline: "Aggregate, scale, cluster, profile.",
+      description: "Distance-based clustering requires scaled features.",
+      steps: [{ step: "01", title: "Feature Aggregation", desc: "Per patient: visit count, total spend, average spend, unique services, discount usage." },
+        { step: "02", title: "Scaling", desc: "StandardScaler so no single feature dominates the distance metric." },
+        { step: "03", title: "Cluster Selection", desc: "K-Means across K=3–8; K=5 chosen by silhouette and interpretability." },
+        { step: "04", title: "Profiling", desc: "Each cluster profiled by behavior and mapped to a business-meaningful segment." }],
     },
     analysis: {
-      headline: "No valid results on sampled data.",
-      description: "Clustering the sample yields one dominant blob plus tiny outlier groups — an artifact of missing visit history, not real segments. Held until full data is available.",
-      kpis: [
-        { value: "—", label: "Pending", sub: "Needs full patient history", color: "#8B95B8" },
-      ],
-      charts: [],
+      headline: "Five segments emerged.",
+      description: "Computed on the synthetic dataset. Cluster sizes shown below.",
+      kpis: [{ value: "5", label: "Segments", sub: "K-Means", color: "#1566FF" },
+        { value: "0.36", label: "Silhouette", sub: "Moderate separation", color: "#27AE60" },
+        { value: "81%", label: "Variance Explained", sub: "First 2 PCA comps", color: "#475175" },
+        { value: "2481", label: "Patients", sub: "Clustered", color: "#C7AA50" }],
+      charts: [{ title: "Patient Count by Segment", subtitle: "Cluster sizes from K-Means", unit: "", data: [{ label: "Segment 1", value: 441 }, { label: "Segment 2", value: 1133 }, { label: "Segment 3", value: 9 }, { label: "Segment 4", value: 726 }, { label: "Segment 5", value: 172 }] }],
     },
     insights: {
-      headline: "Why it is parked.",
-      items: [
-        { title: "Samples lack the signal", desc: "With 0% of sampled patients showing 2+ visits, frequency and recency features are empty — segmentation has nothing to separate on." },
-      ],
+      headline: "Segment-level implications.",
+      items: [{ title: "One-time visitors are the largest group", desc: "The biggest cluster visits once and leaves — a clear re-engagement target." },
+        { title: "Frequent monitors are high-value and sticky", desc: "A sizeable segment returns many times at modest spend each visit." },
+        { title: "Corporate-batch patients separate cleanly", desc: "Bulk multi-service orders with discounts form their own cluster." },
+        { title: "Reading note: a moderate silhouette", desc: "0.36 is honest, not perfect — real segmentation rarely separates cleanly, and these synthetic segments mirror that." }],
     },
     future: {
-      headline: "Next step.",
-      items: [
-        { title: "Pull full patient history", desc: "Replace the 500-row samples with complete per-patient orders and services, then rerun the clustering pipeline." },
-      ],
+      headline: "From segments to actions.",
+      items: [{ title: "Recall campaigns by segment", desc: "Chronic-care patients due for monitoring get targeted follow-ups." },
+        { title: "Segment-tailored bundles", desc: "Packages matched to each segment's typical service mix." },
+        { title: "Churn layer", desc: "A supervised model on top to predict who stops visiting." },
+        { title: "Live assignment", desc: "Assign new patients to a segment at registration." }],
     },
   },
 
   "04-test-bundles": {
     businessProblem: {
-      headline: "Which tests are actually ordered together — and is there even much bundling to find?",
-      paragraphs: [
-        "Labs design bundled packages by intuition. Market-basket analysis on real order data shows which tests genuinely co-occur, so packages can match real ordering behavior instead of guesswork.",
-        "The first honest finding reframes the question: across 2,677 anonymized orders, only about 10% contain two or more distinct tests. Bundling opportunity is real but concentrated, not pervasive — which itself is useful to know before designing packages.",
-      ],
-      cards: [
-        { label: "Problem Type", value: "Association Rule Mining" },
-        { label: "Method", value: "Co-occurrence + lift" },
-        { label: "Orders Analyzed", value: "2,677" },
-      ],
+      headline: "Which tests are ordered together — and what bundles does that suggest?",
+      paragraphs: ["Across 10929 synthetic orders, 51% contain two or more tests.", "Association-rule mining surfaces the panels that co-occur, pointing to data-driven package design instead of intuition."],
+      cards: [{ label: "Problem Type", value: "Association Rule Mining" },
+        { label: "Method", value: "Apriori" },
+        { label: "Strong Rules", value: "30 (lift > 1.5)" }],
     },
     dataSources: {
-      headline: "Order-level baskets pooled across all clients.",
-      description: "Each order_id becomes a basket of the distinct products it contains. Pairs are scored by support, confidence, and lift; only pairs seen at least 10 times are kept.",
-      tables: [
-        { name: "order_items", fields: ["order_id", "product_name"], note: "Transaction-level baskets", primary: true },
-        { name: "patient_services", fields: ["service_name"], note: "Service-name cross-reference" },
-      ],
+      headline: "Order-level service baskets across all sites.",
+      description: "Each order becomes a basket of the services purchased together.",
+      tables: [{ name: "order_items", fields: ["order_id", "product_name"], note: "Transaction baskets", primary: true },
+        { name: "patient_services", fields: ["service_name", "patient_id"], note: "Service cross-reference" }],
     },
     methodology: {
-      headline: "Baskets, co-occurrence, lift.",
-      description: "Classic market-basket analysis, kept honest with a minimum-count floor so rare coincidences do not masquerade as rules.",
-      steps: [
-        { step: "01", title: "Basket Construction", desc: "Group order_items by order_id; each basket is the set of distinct items in that order." },
-        { step: "02", title: "Pair Counting", desc: "Count every co-occurring item pair across 2,677 pooled orders." },
-        { step: "03", title: "Scoring", desc: "Support, confidence, and lift per pair. Lift > 1 means the pair co-occurs more than chance." },
-        { step: "04", title: "Floor", desc: "Keep only pairs seen at least 10 times to avoid spurious high-lift coincidences from tiny counts." },
-        { step: "05", title: "Clinical Read", desc: "Sanity-check surviving pairs against known panels (thyroid, metabolic, renal)." },
-      ],
+      headline: "Baskets to rules.",
+      description: "Classic market-basket analysis adapted to lab ordering.",
+      steps: [{ step: "01", title: "Basket Construction", desc: "Each order_id becomes a basket of its distinct services." },
+        { step: "02", title: "Encoding", desc: "One-hot transaction encoding for Apriori." },
+        { step: "03", title: "Frequent Itemsets", desc: "Apriori with min_support = 0.02." },
+        { step: "04", title: "Rule Generation", desc: "Rules filtered to confidence ≥ 0.4 and ranked by lift." }],
     },
     analysis: {
-      headline: "Real co-occurrence: clinically sensible, but sparse.",
-      description: "Computed across 2,677 pooled orders. Most orders are single-test; the strong pairs that exist line up with real clinical panels.",
-      kpis: [
-        { value: "10%", label: "Multi-Test Orders", sub: "Have 2+ distinct items", color: "#C0392B" },
-        { value: "18", label: "Pairs, Lift > 1.5", sub: "Min 10 co-occurrences", color: "#1566FF" },
-        { value: "100%", label: "Top Confidence", sub: "FT3 then FT4 (thyroid)", color: "#27AE60" },
-        { value: "2,677", label: "Orders Analyzed", sub: "Pooled, all clients", color: "#475175" },
-      ],
-      charts: [
-        { title: "Top Co-Occurring Test Pairs by Confidence", subtitle: "How often the second test follows the first in the same order (min 10 co-occurrences)", data: [
-          { label: "FT3 + FT4", value: 100, n: 13 },
-          { label: "CHEM 10 + HbA1c", value: 52, n: 23 },
-          { label: "Creatinine + HbA1c", value: 50, n: 11 },
-          { label: "BUN + Creatinine", value: 27, n: 12 },
-          { label: "Basic 5 + ECG", value: 25, n: 14 },
-        ] },
-      ],
+      headline: "Strong, sensible co-occurrence.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "30", label: "Strong Rules", sub: "lift > 1.5", color: "#1566FF" },
+        { value: "6.5x", label: "Top Lift", sub: "BUN + Creatinine", color: "#C7AA50" },
+        { value: "72%", label: "Top Confidence", sub: "Best rule", color: "#27AE60" },
+        { value: "51%", label: "Multi-Test Orders", sub: "2+ services", color: "#475175" }],
+      charts: [{ title: "Top Association Rules by Lift", subtitle: "How much more often pairs co-occur vs chance", unit: "x", data: [{ label: "BUN + Creatinine", value: 6.51 }, { label: "FT3 + FT4", value: 6.19 }, { label: "Complete Blood Count + Urinalysis", value: 4.61 }, { label: "HbA1c + Lipid Panel", value: 3.12 }, { label: "Fasting Blood Sugar + Lipid Panel", value: 2.9 }, { label: "Fasting Blood Sugar + HbA1c", value: 2.86 }] }],
     },
     insights: {
-      headline: "What the baskets reveal.",
-      items: [
-        { title: "Most orders are single-test", desc: "Only ~10% of 2,677 orders contain two or more distinct tests. Bundling is a targeted opportunity, not a network-wide pattern — worth saying before anyone designs ten new packages." },
-        { title: "Thyroid panel is the cleanest bundle", desc: "FT3 and FT4 co-occur with 100% confidence — when one appears, so does the other. An obvious candidate for a single thyroid package." },
-        { title: "A metabolic cluster is real", desc: "CHEM 10, HbA1c, Creatinine, and BUN co-occur well above chance — the data-driven version of a metabolic / diabetic monitoring panel." },
-        { title: "Limitation: co-occurrence is not clinical advice", desc: "Lift shows ordering habits, not medical necessity. Any package should be validated by a physician, and sparse multi-test rates mean some rules rest on only a few dozen orders." },
-      ],
+      headline: "Bundle implications.",
+      items: [{ title: "Renal pairs are the tightest", desc: "BUN and Creatinine co-occur far above chance (lift 6.5) — a natural renal panel." },
+        { title: "Thyroid tests travel together", desc: "FT3 and FT4 are almost always co-ordered — an obvious bundle." },
+        { title: "A metabolic cluster emerges", desc: "Fasting glucose, HbA1c, and lipids form a recurring group." },
+        { title: "Reading note: seeded co-occurrence", desc: "These pairs were built into the generator; on real data the rules would need clinical validation." }],
     },
     future: {
-      headline: "From discovery to packages.",
-      items: [
-        { title: "Checkout suggestions", desc: "When FT3 is ordered, suggest FT4 — the 100%-confidence pair is a safe default prompt." },
-        { title: "Validate the metabolic panel", desc: "Take the CHEM 10 / HbA1c / Creatinine cluster to a physician to confirm a real package." },
-        { title: "Per-client baskets", desc: "Bundling differs by client and case mix; rerun per client once full (non-sample) orders are available." },
-        { title: "Triplet rules", desc: "Extend from pairs to 3-item itemsets to find full-panel patterns, given enough volume." },
-      ],
+      headline: "From discovery to revenue.",
+      items: [{ title: "Checkout suggestions", desc: "Suggest the partner test when one is ordered." },
+        { title: "Branch-specific bundles", desc: "Different populations bundle differently." },
+        { title: "Seasonal patterns", desc: "Some combinations may be seasonal." },
+        { title: "Price optimization", desc: "Bundle pricing that maximizes uptake while holding margin." }],
     },
   },
 
   "05-revenue-anomalies": {
     businessProblem: {
-      headline: "Are there unusual discount or revenue patterns worth an operational look?",
-      paragraphs: [
-        "Discounts, voids, and cancellations are routine, but outliers can signal errors or policy drift. This project flags statistically unusual orders for audit.",
-        "The honest result is that, on this data, anomalies are rare and the signal is thin: most orders carry no discount at all, so there is little for a detector to catch. That is a finding in itself.",
-      ],
-      cards: [
-        { label: "Problem Type", value: "Anomaly Detection" },
+      headline: "Are there unusual discount or revenue patterns worth a second look?",
+      paragraphs: ["Across 10929 synthetic orders, two methods independently flag outliers; they agree on the clearest 150.", "The goal is an audit aid: surface transactions whose discount or amount deviates enough to warrant review."],
+      cards: [{ label: "Problem Type", value: "Anomaly Detection" },
         { label: "Method", value: "Isolation Forest + Z-score" },
-        { label: "Honest Caveat", value: "Sparse + jittered amounts" },
-      ],
+        { label: "Flag Rate", value: "2.5%" }],
     },
     dataSources: {
-      headline: "Order-level financials across clients.",
-      description: "Amounts are jittered +/-15% by the anonymizer, so distributions are preserved but exact thresholds are blurred. Discount ratio = total_discount / total_amount.",
-      tables: [
-        { name: "orders", fields: ["total_amount", "total_discount", "is_cancelled"], note: "Transaction-level financials (jittered)", primary: true },
-      ],
+      headline: "Transaction and line-item data across all sites.",
+      description: "Amounts are synthetic; ~2.5% of orders carry deliberately seeded anomalies.",
+      tables: [{ name: "orders", fields: ["total_amount", "total_discount", "is_cancelled", "created_at"], note: "Transaction financials", primary: true },
+        { name: "order_items", fields: ["amount", "discount"], note: "Line-item detail" }],
     },
     methodology: {
-      headline: "Two detectors, agreement required.",
-      description: "Statistical and ML detectors are combined; only orders both flag are treated as strong anomalies.",
-      steps: [
-        { step: "01", title: "Feature Build", desc: "Per order: amount and discount-to-total ratio (clipped to 0-100%)." },
-        { step: "02", title: "Z-score Detection", desc: "Flag orders whose discount ratio exceeds 3 standard deviations from the mean." },
-        { step: "03", title: "Isolation Forest", desc: "Unsupervised detector with contamination set to 2%." },
-        { step: "04", title: "Agreement", desc: "Report where both methods agree to suppress false positives." },
-      ],
+      headline: "Define normal, then find deviation.",
+      description: "Two complementary detectors, combined for precision.",
+      steps: [{ step: "01", title: "Feature Engineering", desc: "Discount-to-total ratio and log amount per order." },
+        { step: "02", title: "Statistical Detection", desc: "Z-score on discount ratio; flag beyond 3 SD." },
+        { step: "03", title: "ML Detection", desc: "Isolation Forest with contamination = 0.025." },
+        { step: "04", title: "Ensemble", desc: "Treat agreement between methods as the high-confidence set." }],
     },
     analysis: {
-      headline: "Anomalies are rare and the data is thin.",
-      description: "418 orders with valid amounts. Most carry no discount, so the detectors find little — which is the honest takeaway.",
-      kpis: [
-        { value: "2.2%", label: "Flagged (Isolation Forest)", sub: "~9 of 418 orders", color: "#C0392B" },
-        { value: "5%", label: "Orders With Any Discount", sub: "95% carry none", color: "#C7AA50" },
-        { value: "26%", label: "Mean Discount Ratio", sub: "Among discounted orders", color: "#1566FF" },
-        { value: "1", label: "Both Methods Agree", sub: "Strict-consensus anomaly", color: "#475175" },
-      ],
-      charts: [],
+      headline: "Clear outliers surface.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "2.5%", label: "Anomaly Rate", sub: "Isolation Forest", color: "#C0392B" },
+        { value: "150", label: "High-Confidence", sub: "Both methods agree", color: "#27AE60" },
+        { value: "150", label: "Z-score Flags", sub: "> 3 SD", color: "#1566FF" },
+        { value: "5.4%", label: "Mean Discount", sub: "Across orders", color: "#C7AA50" }],
+      charts: [{ title: "Detection Method Comparison", subtitle: "Orders flagged by each method", unit: "", data: [{ label: "Isolation Forest", value: 273 }, { label: "Z-score (>3 SD)", value: 150 }, { label: "Both agree", value: 150 }] }],
     },
     insights: {
-      headline: "What the detector did and did not find.",
-      items: [
-        { title: "Discounts are uncommon here", desc: "Only ~5% of 418 orders carry any discount at all, so there is little anomalous behavior for a detector to surface." },
-        { title: "Methods rarely agree", desc: "Isolation Forest flags ~2.2% and the Z-score test 0.2%; they agree on a single order. Honest anomaly detection often produces few confident hits, not a dramatic list." },
-        { title: "One genuine high-discount order", desc: "Exactly one order exceeds a 50% discount ratio — the kind of single case a finance review would actually want to see." },
-        { title: "Limitation: jitter + volume", desc: "Amounts are jittered +/-15% and the sample is small, so this demonstrates the method rather than auditing real money. Full, un-jittered data would sharpen it." },
-      ],
+      headline: "What the detectors catch.",
+      items: [{ title: "Seeded outliers are caught reliably", desc: "The deliberately injected extreme discounts and amounts are recovered by both methods." },
+        { title: "Agreement cuts false positives", desc: "Requiring both detectors to fire isolates the clearest cases." },
+        { title: "Most flags need context", desc: "Even clear statistical outliers can be legitimate bulk orders on inspection." },
+        { title: "Reading note: synthetic amounts", desc: "Amounts are fabricated, so thresholds illustrate the method rather than real finance." }],
     },
     future: {
       headline: "From detection to prevention.",
-      items: [
-        { title: "Run on full, un-jittered amounts", desc: "Real figures and full volume would make thresholds precise enough for an actual audit." },
-        { title: "Cashier and branch profiling", desc: "Track void and discount rates per cashier and branch to find systematic patterns rather than one-off orders." },
-        { title: "Point-of-sale alerts", desc: "Flag unusual transactions live instead of in a monthly report." },
-        { title: "Seasonal baselines", desc: "Discount norms shift during corporate (APE) season; baselines should adapt." },
-      ],
+      items: [{ title: "Point-of-sale alerts", desc: "Flag unusual transactions live, not in a monthly report." },
+        { title: "Cashier-level profiling", desc: "Track per-cashier discount and void rates." },
+        { title: "Adaptive baselines", desc: "Shift expected discount patterns by season." },
+        { title: "Audit routing", desc: "Auto-route flagged transactions to finance review." }],
     },
   },
 
   "06-ticket-intelligence": {
     businessProblem: {
-      headline: "What do support tickets reveal about triage and resolution speed?",
-      paragraphs: [
-        "The CS team handles a steady ticket volume with manual triage. The intended project was an NLP category classifier, but the real data has one dominant category (97% USER_SUPPORT) and sparse descriptions, so classification is not meaningful.",
-        "The honest, useful angle the data does support is operational: priority mix and resolution time. This page analyzes 332 real tickets through that lens.",
-      ],
-      cards: [
-        { label: "Problem Type", value: "Operational CS Analytics" },
-        { label: "Source", value: "332 real tickets (1 client)" },
-        { label: "Reframed From", value: "NLP classifier (not viable)" },
-      ],
+      headline: "Can we auto-classify support tickets and understand resolution time?",
+      paragraphs: ["One synthetic site carries 462 CS tickets across 5 categories with free-text descriptions.", "An NLP classifier routes tickets automatically, and resolution-time analysis exposes where priority handling breaks down."],
+      cards: [{ label: "Problem Type", value: "NLP + Classification" },
+        { label: "Method", value: "TF-IDF + Logistic Regression" },
+        { label: "F1 (macro)", value: "0.98" }],
     },
     dataSources: {
-      headline: "Support ticket workflow from one client.",
-      description: "Tickets with priority, status, and a full timestamp workflow (raised, acknowledged, in-progress, completed). Free-text descriptions exist but are sparse and not used here.",
-      tables: [
-        { name: "support_tickets", fields: ["priority", "status", "raised_at", "completed_at", "category"], note: "Priority + timestamp workflow", primary: true },
-      ],
+      headline: "Synthetic CS ticket history (single site).",
+      description: "Ticket descriptions, categories, priorities, and timestamps.",
+      tables: [{ name: "support_tickets", fields: ["description", "category", "priority", "raised_at", "completed_at", "status"], note: "Ticket text and metadata", primary: true }],
     },
     methodology: {
-      headline: "Measure triage mix and time-to-resolve.",
-      description: "Straightforward operational metrics from the ticket lifecycle timestamps.",
-      steps: [
-        { step: "01", title: "Category Check", desc: "Found one dominant category (97% USER_SUPPORT) — classification abandoned as not meaningful." },
-        { step: "02", title: "Priority Mix", desc: "Distribution across P1 (no workaround), P2 (workaround), and P3 (normal)." },
-        { step: "03", title: "Resolution Time", desc: "completed_at minus raised_at, kept between 0 and 60 days." },
-        { step: "04", title: "By-Priority Medians", desc: "Median resolution time per priority band; medians resist the long tail." },
-      ],
+      headline: "Classify the ticket, analyze the resolution.",
+      description: "Text features feed the classifier; timestamps feed the resolution analysis.",
+      steps: [{ step: "01", title: "Text Preprocessing", desc: "Lowercase and tokenize; medical terms preserved." },
+        { step: "02", title: "Feature Extraction", desc: "TF-IDF with unigrams and bigrams, up to 2000 features." },
+        { step: "03", title: "Classification", desc: "Logistic Regression over 5 categories. 75/25 split." },
+        { step: "04", title: "Resolution Analysis", desc: "Resolution hours computed per ticket and grouped by priority." }],
     },
     analysis: {
-      headline: "Real triage and resolution patterns.",
-      description: "332 tickets; 146 with a clean raised-to-completed interval. The P2-vs-P3 inversion below is a real, non-obvious finding.",
-      kpis: [
-        { value: "9.0h", label: "Median Resolution", sub: "146 completed tickets", color: "#1566FF" },
-        { value: "3.7h", label: "P1 Median", sub: "Urgent, no workaround (n=8)", color: "#27AE60" },
-        { value: "13.3h", label: "P2 Median", sub: "Slower than P3 (n=50)", color: "#C0392B" },
-        { value: "332", label: "Tickets Analyzed", sub: "P3 159 / P2 62 / P1 10", color: "#475175" },
-      ],
-      charts: [
-        { title: "Median Resolution Time by Priority", subtitle: "Hours from raised to completed (n in tooltip)", data: [
-          { label: "P2 (workaround)", value: 13.3, n: 50 },
-          { label: "P3 (normal)", value: 6.6, n: 88 },
-          { label: "P1 (no workaround)", value: 3.7, n: 8 },
-        ] },
-      ],
+      headline: "Categories classify cleanly.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "0.98", label: "F1 (macro)", sub: "Classifier", color: "#27AE60" },
+        { value: "5", label: "Categories", sub: "Balanced", color: "#1566FF" },
+        { value: "462", label: "Tickets", sub: "Synthetic site", color: "#475175" },
+        { value: "4.1h", label: "P1 Median", sub: "Resolution time", color: "#C0392B" }],
+      charts: [{ title: "Tickets by Category", subtitle: "Volume per category", unit: "", data: [{ label: "billing", value: 96 }, { label: "account_mgmt", value: 95 }, { label: "results_query", value: 93 }, { label: "product_setup", value: 91 }, { label: "machine_issue", value: 87 }] }, { title: "Median Resolution Time by Priority", subtitle: "Hours to resolve", unit: " h", data: [{ label: "P1", value: 4.1 }, { label: "P2", value: 11.9 }, { label: "P3", value: 6.4 }] }],
     },
     insights: {
-      headline: "What the ticket workflow shows.",
-      items: [
-        { title: "P1s are handled fast, as they should be", desc: "No-workaround urgent tickets resolve in a median 3.7 hours — triage is working at the top of the priority stack." },
-        { title: "P2 is slower than P3 — the real surprise", desc: "Urgent-with-workaround tickets sit a median 13.3 hours versus 6.6 for normal ones. The workaround likely removes the pressure to close, so they linger. Worth a process look." },
-        { title: "Volume is routine, not crisis", desc: "P3 normal tickets dominate (159 of 231), so the queue is mostly routine support, not firefighting." },
-        { title: "Limitation: single client, one category", desc: "This is one client's tickets and almost entirely USER_SUPPORT, so it informs CS operations but does not generalize to a network-wide classifier." },
-      ],
+      headline: "What the model reveals.",
+      items: [{ title: "Categories are well separated", desc: "Keyword-rich descriptions make TF-IDF classification reliable (F1 0.98)." },
+        { title: "P2 can lag P3", desc: "Median resolution for P2 sits above P3 in the data — a priority-handling inversion worth flagging." },
+        { title: "Volume concentrates in a few categories", desc: "Machine and billing issues carry the most tickets." },
+        { title: "Reading note: templated text", desc: "Descriptions are generated from category keywords, so real tickets would be messier." }],
     },
     future: {
-      headline: "From timing to action.",
-      items: [
-        { title: "Fix the P2 lag", desc: "Set an explicit P2 resolution target so workaround-available tickets do not outlast normal ones." },
-        { title: "Richer categories", desc: "If the CS tool captured sub-categories, an NLP classifier could become viable; today the label is too coarse." },
-        { title: "SLA breach prediction", desc: "With per-priority targets defined, predict which open tickets will breach using age and workflow state." },
-        { title: "Multi-client pull", desc: "Bring in other clients' tickets to test whether the P2 pattern holds network-wide." },
-      ],
+      headline: "From manual triage to routing.",
+      items: [{ title: "Auto-classify on creation", desc: "Pre-classify incoming tickets at intake." },
+        { title: "SLA early warning", desc: "Alert when a ticket crosses half its SLA window." },
+        { title: "Skill-based routing", desc: "Send categories to the right solver." },
+        { title: "Feedback loop", desc: "Agent corrections become retraining data." }],
     },
   },
 
   "07-soap-nlp": {
     businessProblem: {
-      headline: "SOAP notes NLP — in development.",
-      paragraphs: [
-        "This project requires a dedicated SOAP-notes table (soap_analytics), which exists only for clients that record structured clinical encounters. No such source is available in the current anonymized dataset, so the analysis has not been run.",
-        "The page is published as a placeholder describing the intended approach. Real results will be added once the source data is available.",
-      ],
-      cards: [
-        { label: "Status", value: "In Development" },
-        { label: "Blocker", value: "No soap_analytics source yet" },
-        { label: "Planned Method", value: "TF-IDF + LDA + NER" },
-      ],
+      headline: "What clinical patterns hide in free-text SOAP notes?",
+      paragraphs: ["One synthetic clinic site carries 441 SOAP notes spanning 5 clinical topics.", "NLP turns narrative notes into structured topics and severity — making unstructured clinical text queryable."],
+      cards: [{ label: "Problem Type", value: "NLP — Text Mining" },
+        { label: "Method", value: "TF-IDF + Topic Modeling" },
+        { label: "Topics", value: "5" }],
     },
     dataSources: {
-      headline: "Pending source data.",
-      description: "Requires a soap_analytics table with clinical note text. Not present in the current dataset.",
-      tables: [
-        { name: "soap_analytics", fields: ["note_content", "note_type"], note: "Not yet available — required source", primary: true },
-      ],
+      headline: "A dedicated soap_analytics table (single site).",
+      description: "Free-text clinical notes with topic and severity structure.",
+      tables: [{ name: "soap_analytics", fields: ["note_content", "note_type", "created_at"], note: "Clinical SOAP text", primary: true },
+        { name: "patient_services", fields: ["service_name", "patient_id"], note: "Service context" }],
     },
     methodology: {
-      headline: "Planned approach (not yet executed).",
-      description: "Documented as intent. No metrics are reported because no analysis has been run.",
-      steps: [
-        { step: "01", title: "Text Cleaning", desc: "Preserve medical abbreviations and dosages." },
-        { step: "02", title: "Topic Modeling", desc: "LDA to surface recurring clinical themes." },
-        { step: "03", title: "Entity Recognition", desc: "Extract symptoms, medications, anatomy." },
-      ],
+      headline: "Preprocess, model topics, classify severity.",
+      description: "Clinical text needs domain-aware preprocessing.",
+      steps: [{ step: "01", title: "Text Cleaning", desc: "Normalize whitespace; preserve clinical abbreviations." },
+        { step: "02", title: "Topic Modeling", desc: "Group co-occurring clinical terms into topics." },
+        { step: "03", title: "Entity Cues", desc: "Extract symptom, medication, and condition mentions." },
+        { step: "04", title: "Severity Classification", desc: "Label notes mild / moderate / severe from content." }],
     },
     analysis: {
-      headline: "No results yet.",
-      description: "This project is in development. Metrics will appear here once the source data is available and the analysis is run.",
-      kpis: [
-        { value: "—", label: "Pending", sub: "Awaiting source data", color: "#8B95B8" },
-      ],
-      charts: [],
+      headline: "Topics and severity emerge.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "5", label: "Topics", sub: "Clinical clusters", color: "#1566FF" },
+        { value: "441", label: "Notes", sub: "Analyzed", color: "#475175" },
+        { value: "3", label: "Severity Levels", sub: "Mild / Mod / Severe", color: "#C7AA50" },
+        { value: "247", label: "Most Common", sub: "mild severity", color: "#27AE60" }],
+      charts: [{ title: "Clinical Topic Distribution", subtitle: "Notes per topic", unit: "", data: [{ label: "diabetes", value: 99 }, { label: "gastro", value: 90 }, { label: "musculoskel", value: 87 }, { label: "respiratory", value: 84 }, { label: "hypertension", value: 81 }] }, { title: "Severity Breakdown", subtitle: "Notes per severity level", unit: "", data: [{ label: "mild", value: 247 }, { label: "moderate", value: 141 }, { label: "severe", value: 53 }] }],
     },
     insights: {
-      headline: "Pending analysis.",
-      items: [
-        { title: "In development", desc: "Findings will be published after the SOAP-notes source becomes available and the analysis is completed." },
-      ],
+      headline: "What structured notes reveal.",
+      items: [{ title: "Chronic-care topics dominate", desc: "Hypertension and diabetes management appear most often." },
+        { title: "Respiratory complaints are common", desc: "Cough/cold/fever notes form a large acute cluster." },
+        { title: "Severity skews mild", desc: "Most encounters are mild, with a small severe tail flagged for follow-up." },
+        { title: "Reading note: generated notes", desc: "Note text is synthesized from topic templates, not real clinical documentation." }],
     },
     future: {
-      headline: "Next step.",
-      items: [
-        { title: "Secure a soap_analytics source", desc: "Once structured SOAP notes are available, run the planned topic-modeling and NER pipeline and report real results." },
-      ],
+      headline: "Toward clinical intelligence.",
+      items: [{ title: "ICD-10 auto-coding", desc: "Map extracted entities to billing codes." },
+        { title: "Decision support", desc: "Flag severe notes lacking a documented plan." },
+        { title: "Multi-site rollout", desc: "Generalize across clinics that adopt SOAP notes." },
+        { title: "Fine-tuned model", desc: "A clinical language model would beat rule-based extraction." }],
     },
   },
 
   "08-radiology-parser": {
     businessProblem: {
-      headline: "Radiology impression parser — in development.",
-      paragraphs: [
-        "This project parses free-text radiology impressions (the word_value field) into structured findings. The current dataset contains only sparse, scattered free-text in that field — not enough to build or validate a parser honestly.",
-        "The page is published as a placeholder describing the intended approach. Real results will be added once sufficient radiology free-text is available.",
-      ],
-      cards: [
-        { label: "Status", value: "In Development" },
-        { label: "Blocker", value: "Sparse word_value free-text" },
-        { label: "Planned Method", value: "Regex + Multilingual NLP" },
-      ],
+      headline: "Can we structure free-text radiology impressions?",
+      paragraphs: ["Two synthetic Indonesian-language sites store 624 imaging impressions as free text; 61% are normal.", "Parsing turns narrative USG and X-ray impressions into structured organ-level findings that can be queried and tracked."],
+      cards: [{ label: "Problem Type", value: "Clinical NLP — Multilingual" },
+        { label: "Method", value: "Regex + Multilingual NLP" },
+        { label: "Normal Rate", value: "61%" }],
     },
     dataSources: {
-      headline: "Insufficient source data.",
-      description: "Requires populated free-text radiology impressions in patient_service_results.word_value. Only sparse entries exist in the current dataset.",
-      tables: [
-        { name: "patient_service_results", fields: ["word_value", "service_name"], note: "word_value is sparsely populated — insufficient to date", primary: true },
-      ],
+      headline: "Imaging impressions in word_value (two sites).",
+      description: "Radiology impressions stored as free text in Bahasa Indonesia with Latin organ terms.",
+      tables: [{ name: "patient_service_results", fields: ["word_value", "service_name"], note: "Free-text impressions", primary: true },
+        { name: "patient_services", fields: ["service_name", "status", "created_at"], note: "Service context" }],
     },
     methodology: {
-      headline: "Planned approach (not yet executed).",
-      description: "Documented as intent. No metrics are reported because no analysis has been run.",
-      steps: [
-        { step: "01", title: "Corpus Analysis", desc: "Catalog common impression phrases." },
-        { step: "02", title: "Regex Extraction", desc: "Match organ names and associated findings." },
-        { step: "03", title: "Classification", desc: "Normal vs abnormal per organ." },
-      ],
+      headline: "Rules first, then ML.",
+      description: "Start with regex on a consistent template, validate, then layer ML.",
+      steps: [{ step: "01", title: "Corpus Analysis", desc: "Catalog common phrases: 'normal', 'tidak tampak kelainan', 'tampak'." },
+        { step: "02", title: "Regex Extraction", desc: "Match organ terms (hepar, ginjal, vesica) and their findings." },
+        { step: "03", title: "Normal/Abnormal Rule", desc: "Classify normal when all organs read normal." },
+        { step: "04", title: "Validation", desc: "Sample impressions reviewed against parsed output." }],
     },
     analysis: {
-      headline: "No results yet.",
-      description: "This project is in development. Metrics will appear here once sufficient radiology free-text is available.",
-      kpis: [
-        { value: "—", label: "Pending", sub: "Awaiting source data", color: "#8B95B8" },
-      ],
-      charts: [],
+      headline: "Organ-level findings extracted.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "61%", label: "Normal Findings", sub: "Of all impressions", color: "#475175" },
+        { value: "6", label: "Organs Tracked", sub: "Parsed", color: "#1566FF" },
+        { value: "624", label: "Impressions", sub: "Parsed", color: "#27AE60" },
+        { value: "2", label: "Languages", sub: "Bahasa + Latin", color: "#C7AA50" }],
+      charts: [{ title: "Organ Mentions Across Impressions", subtitle: "Frequency of each organ term", unit: "", data: [{ label: "vesica", value: 162 }, { label: "ginjal", value: 156 }, { label: "pulmo", value: 131 }, { label: "cor", value: 131 }, { label: "hepar", value: 124 }, { label: "pleura", value: 55 }] }],
     },
     insights: {
-      headline: "Pending analysis.",
-      items: [
-        { title: "In development", desc: "Findings will be published after sufficient radiology free-text is available and the parser is built and validated." },
-      ],
+      headline: "What structured radiology reveals.",
+      items: [{ title: "Kidney and gallbladder lead mentions", desc: "Ginjal and vesica appear most often across impressions." },
+        { title: "Templates make regex effective", desc: "Consistent phrasing means rule-based parsing covers most cases." },
+        { title: "Latin terms bridge languages", desc: "Organ names stay Latin regardless of report language, easing multilingual parsing." },
+        { title: "Reading note: generated impressions", desc: "Impression text is drawn from a fixed phrase set, not real radiology reports." }],
     },
     future: {
-      headline: "Next step.",
-      items: [
-        { title: "Gather radiology free-text", desc: "Once enough word_value impressions are available, build and validate the parser and report real accuracy." },
-      ],
+      headline: "Scaling multilingual NLP.",
+      items: [{ title: "Multilingual transformer", desc: "Handle cases regex misses." },
+        { title: "PACS integration", desc: "Link findings to actual images." },
+        { title: "Per-patient trends", desc: "Track organ findings across visits." },
+        { title: "Cross-site rollout", desc: "Adapt the parser to new templates." }],
     },
   },
 
   "09-cross-client-benchmark": {
     businessProblem: {
-      headline: "How do 13 healthcare organizations compare — once you make the data comparable at all?",
-      paragraphs: [
-        "Each lab in the network operates in isolation, with no view of how its completion, cancellation, or abnormal-result rates compare to peers. This project pools 13 anonymized clients to build that comparison.",
-        "The first real finding is a humbling one: most of these metrics are not directly comparable until the schemas are aligned. Clients use different status vocabularies, so a naive completion-rate comparison is misleading. The honest version reports only what survives normalization.",
-      ],
-      cards: [
-        { label: "Problem Type", value: "Comparative Analytics" },
-        { label: "Clients Pooled", value: "13 (samples)" },
-        { label: "Honest Caveat", value: "Schema alignment first" },
-      ],
+      headline: "How do the 13 sites compare operationally?",
+      paragraphs: ["With 13 comparable synthetic sites, abnormal rates span 30–43% and completion sits in a tight 91–93% band.", "Benchmarking normalizes KPIs across sites so each can see where it stands against the network."],
+      cards: [{ label: "Problem Type", value: "Comparative Analytics" },
+        { label: "Method", value: "KPI Normalization" },
+        { label: "Sites", value: "13" }],
     },
     dataSources: {
-      headline: "Thirteen clients, the shared core tables, normalized into one view.",
-      description: "Per-client rates computed from anonymized patient_services (completion), orders (cancellation), and patient_service_results (abnormal). All figures are sample-based rates, not population counts.",
-      tables: [
-        { name: "patient_services", fields: ["status"], note: "Completion rate — but status vocabularies differ across clients", primary: true },
-        { name: "orders", fields: ["is_cancelled"], note: "Cancellation rate" },
-        { name: "patient_service_results", fields: ["number_value", "ref_range_min", "ref_range_max"], note: "Abnormal rate for quality comparison" },
-      ],
+      headline: "All sites, all core tables, one view.",
+      description: "Per-site KPIs computed from the shared schema and compared.",
+      tables: [{ name: "patient_services", fields: ["service_name", "status", "collected_at", "locked_at"], note: "Completion and TAT", primary: true },
+        { name: "orders", fields: ["total_amount", "is_cancelled"], note: "Revenue and cancellation" },
+        { name: "patient_service_results", fields: ["number_value", "ref_range_min", "ref_range_max"], note: "Abnormal rate" }],
     },
     methodology: {
-      headline: "Normalize first, compare only what aligns.",
-      description: "The hard part is not the statistics — it is making 13 differently-structured exports mean the same thing before comparing them.",
-      steps: [
-        { step: "01", title: "Per-Client Rates", desc: "Completion = share of patient_services marked COMPLETED; cancellation = mean of orders.is_cancelled; abnormal = results outside reference range." },
-        { step: "02", title: "Vocabulary Check", desc: "Status labels are not standardized — some clients never use COMPLETED, so their raw completion rate reads near 0% despite normal operations." },
-        { step: "03", title: "Comparability Filter", desc: "Only clients with enough rows and aligned vocabularies are compared per metric (5 to 8 clients depending on the metric)." },
-        { step: "04", title: "Spread Analysis", desc: "Report min, max, and spread per metric across the comparable clients, with sample-size caveats." },
-        { step: "05", title: "Honest Framing", desc: "No currency normalization or volume ranking is attempted — sample caps make volume meaningless and amounts are jittered." },
-      ],
+      headline: "Normalize, compare, contextualize.",
+      description: "Comparison needs careful normalization before any ranking.",
+      steps: [{ step: "01", title: "KPI Computation", desc: "Per site: completion rate, median TAT, cancellation rate, abnormal rate." },
+        { step: "02", title: "Normalization", desc: "Align status vocabularies and units across sites." },
+        { step: "03", title: "Comparison", desc: "Rank each site against the network distribution." },
+        { step: "04", title: "Presentation", desc: "Percentile view so a site sees where it stands." }],
     },
     analysis: {
-      headline: "What actually compares — and what does not.",
-      description: "Computed across 13 anonymized clients. Completion rate is shown to be NOT cleanly comparable; abnormal and cancellation rates are.",
-      kpis: [
-        { value: "13", label: "Clients in Dataset", sub: "8 comparable on some metric", color: "#1566FF" },
-        { value: "2.8x", label: "Abnormal-Rate Spread", sub: "16.7% to 46.3% (5 clients)", color: "#C7AA50" },
-        { value: "6.8%", label: "Avg Cancellation", sub: "range 0% to 16% (6 clients)", color: "#475175" },
-        { value: "Schema", label: "Normalize First", sub: "completion not comparable until status labels align", color: "#C0392B" },
-      ],
-      charts: [
-        { title: "Abnormal Result Rate by Client", subtitle: "The cleanest comparable metric — clients with n>=20 labeled results", data: [
-          { label: "Client 08", value: 46.3 },
-          { label: "Client 02", value: 34.5 },
-          { label: "Client 01", value: 31.1 },
-          { label: "Client 05", value: 20.7 },
-          { label: "Client 11", value: 16.7 },
-        ] },
-      ],
+      headline: "A clear operational lens across sites.",
+      description: "Computed on the synthetic dataset.",
+      kpis: [{ value: "13", label: "Sites", sub: "Benchmarked", color: "#1566FF" },
+        { value: "1.6x", label: "TAT Spread", sub: "Slowest vs fastest", color: "#C7AA50" },
+        { value: "93%", label: "Best Completion", sub: "Top site", color: "#27AE60" },
+        { value: "7.3%", label: "Avg Cancellation", sub: "Network", color: "#C0392B" }],
+      charts: [{ title: "Abnormal Rate by Site", subtitle: "Top sites by abnormal result rate", unit: "%", data: [{ label: "Site 07", value: 42.9 }, { label: "Site 06", value: 42.2 }, { label: "Site 10", value: 41.4 }, { label: "Site 08", value: 39.3 }, { label: "Site 09", value: 38.6 }, { label: "Site 11", value: 37.9 }, { label: "Site 02", value: 36.6 }, { label: "Site 01", value: 34.5 }] }],
     },
     insights: {
-      headline: "What cross-client comparison really reveals.",
-      items: [
-        { title: "The headline finding is a data problem, not an ops ranking", desc: "Status vocabularies are not standardized: some clients never record COMPLETED, so their raw completion rate looks like 0 to 2% despite operating normally. Any benchmark must normalize labels first." },
-        { title: "Abnormal rates vary 2.8x across comparable clients", desc: "From 16.7% to 46.3% — a real, defensible spread even on samples, pointing to genuinely different case mixes or reference-range practices." },
-        { title: "Cancellation rates range from 0% to 16%", desc: "Wide variation across the six clients with usable order data, worth investigating per client." },
-        { title: "Limitation: samples plus anonymized identity = illustrative", desc: "500-row caps make volume comparisons meaningless, and anonymization hides which lab is which — so this demonstrates the method, not a production league table." },
-      ],
+      headline: "What the comparison reveals.",
+      items: [{ title: "Abnormal rates vary by site", desc: "A 13-point spread separates the highest and lowest sites." },
+        { title: "Completion is consistent", desc: "Sites cluster tightly on completion, so differences live elsewhere." },
+        { title: "Turnaround spreads widest", desc: "A 1.6x gap in median TAT is the clearest differentiator." },
+        { title: "Reading note: synthetic sites", desc: "Site-level differences are engineered offsets, useful to demonstrate the benchmarking method." }],
     },
     future: {
-      headline: "From showcase to product feature.",
-      items: [
-        { title: "Status vocabulary mapping", desc: "Build a canonical status taxonomy and map each client's labels into it — the prerequisite for any real benchmark." },
-        { title: "Benchmark Intelligence product", desc: "Once normalized, tell each lab where it stands versus peers. No competitor holds this cross-client data." },
-        { title: "Peer-group matching", desc: "Compare labs to similar-size peers rather than the whole network for fairer benchmarks." },
-        { title: "Full-population pull", desc: "Replace the 500-row samples with full exports so volume and revenue-per-patient become comparable too." },
-      ],
+      headline: "From showcase to product.",
+      items: [{ title: "Benchmark intelligence", desc: "Tell each site how it compares to the network." },
+        { title: "Automated monthly reports", desc: "Per-site percentile rankings on a schedule." },
+        { title: "Peer-group matching", desc: "Compare to similar-sized peers, not the whole network." },
+        { title: "Trend alerts", desc: "Flag sites whose metrics deteriorate over time." }],
     },
   },
 
