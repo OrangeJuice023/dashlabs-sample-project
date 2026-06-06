@@ -16,7 +16,7 @@ const tables = [
   { name: "order_items", desc: "Line items: product and service names, discounts, statuses" },
   { name: "patient_services", desc: "Service execution: status, collection and lock timestamps" },
   { name: "patient_service_results", desc: "Lab values and reference ranges — the richest table for modeling" },
-  { name: "support_tickets / soap_analytics", desc: "Per-site extras: CS tickets at one site, SOAP notes at another" },
+  { name: "support_tickets / soap_analytics", desc: "Per-client extras: CS tickets at one client, SOAP notes at another" },
 ];
 
 const standards = [
@@ -54,10 +54,10 @@ export default function MethodologyPage() {
         <section>
           <SectionLabel number="01" label="The Data Model" />
           <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-4">
-            Thirteen synthetic sites, one shared schema.
+            Thirteen synthetic clients, one shared schema.
           </h2>
           <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed mb-8">
-            The generator produces thirteen simulated diagnostic-lab sites that all share the same data model — the same shape a real laboratory information system exports. That shared schema is what makes cross-site analysis possible. Two sites carry extra tables: one has a support-ticket log, another has free-text SOAP notes, mirroring how real client exports differ.
+            The generator produces thirteen simulated diagnostic-lab clients that all share the same data model — the same shape a real laboratory information system exports. That shared schema is what makes cross-client analysis possible. Two clients carry extra tables: one has a support-ticket log, another has free-text SOAP notes, mirroring how real client exports differ.
           </p>
           <div className="space-y-3">
             {tables.map(function renderTable(t, i) {
@@ -88,7 +88,7 @@ export default function MethodologyPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 rounded-xl bg-[#FAFBFE] border border-[#E6E6E6]">
               <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">Engineered in</p>
-              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Age- and test-driven abnormal rates, weekday and peak-hour turnaround effects, per-patient visit segments, test-bundle co-occurrence, seeded revenue anomalies, keyword-separable ticket categories, multilingual radiology impressions, and per-site operational offsets so benchmarking shows real spread.</p>
+              <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">Age- and test-driven abnormal rates, weekday and peak-hour turnaround effects, per-patient visit segments, test-bundle co-occurrence, seeded revenue anomalies, keyword-separable ticket categories, multilingual radiology impressions, and per-client operational offsets so benchmarking shows real spread.</p>
             </div>
             <div className="p-5 rounded-xl bg-[#FAFBFE] border border-[#E6E6E6]">
               <p className="font-semibold text-[#475175] text-[0.9375rem] mb-2">Kept playful, kept clear</p>
