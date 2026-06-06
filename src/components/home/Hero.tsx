@@ -1,69 +1,160 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck } from "lucide-react";
-import { fadeUp, staggerContainer } from "@/lib/animations";
-import { SyntheticBadge } from "@/components/SyntheticBadge";
-import { HeroNetwork } from "@/components/home/HeroNetwork";
+import { useEffect, useRef } from "react";
 
-const stats = [
-  { value: "13", label: "Synthetic Clients" },
-  { value: "9", label: "ML Projects" },
-  { value: "6", label: "Data Tables" },
-  { value: "100%", label: "Synthetic Data" },
-];
+type Node = { x: number; y: number; vx: number; vy: number; phase: number };
+type Pulse = { a: number; b: number; t: number; speed: number };
 
-export function Hero() {
+export function HeroNetwork() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(function setup() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const cv: HTMLCanvasElement = canvas;
+    const c: CanvasRenderingContext2D = ctx;
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const LINK_DIST = 150;
+    let width = 0;
+    let height = 0;
+    let nodes: Node[] = [];
+    let pulses: Pulse[] = [];
+    let raf = 0;
+    let last = 0;
+    let pulseTimer = 0;
+
+    function resize() {
+      const rect = cv.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      cv.width = Math.floor(width * dpr);
+      cv.height = Math.floor(height * dpr);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const count = Math.max(18, Math.min(46, Math.floor((width * height) / 24000)));
+      nodes = [];
+      for (let i = 0; i < count; i++) {
+        nodes.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+
+    function neighbors(i: number): number[] {
+      const out: number[] = [];
+      for (let j = 0; j < nodes.length; j++) {
+        if (j === i) continue;
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        if (dx * dx + dy * dy < LINK_DIST * LINK_DIST) out.push(j);
+      }
+      return out;
+    }
+
+    function spawnPulse() {
+      const a = Math.floor(Math.random() * nodes.length);
+      const ns = neighbors(a);
+      if (ns.length === 0) return;
+      const b = ns[Math.floor(Math.random() * ns.length)];
+      pulses.push({ a: a, b: b, t: 0, speed: 0.6 + Math.random() * 0.5 });
+    }
+
+    function draw(now: number) {
+      const dt = last ? (now - last) / 1000 : 0;
+      last = now;
+      c.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        if (!reduce) {
+          n.x += n.vx;
+          n.y += n.vy;
+          if (n.x < 0 || n.x > width) n.vx *= -1;
+          if (n.y < 0 || n.y > height) n.vy *= -1;
+        }
+      }
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < LINK_DIST * LINK_DIST) {
+            const a = (1 - Math.sqrt(d2) / LINK_DIST) * 0.18;
+            c.strokeStyle = "rgba(120,150,220," + a.toFixed(3) + ")";
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(nodes[i].x, nodes[i].y);
+            c.lineTo(nodes[j].x, nodes[j].y);
+            c.stroke();
+          }
+        }
+      }
+
+      const t = now / 1000;
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        const beat = reduce ? 0 : Math.sin(t * 1.6 + n.phase);
+        const r = 1.8 + (beat + 1) * 0.7;
+        const glow = 0.35 + (beat + 1) * 0.18;
+        c.beginPath();
+        c.arc(n.x, n.y, r, 0, Math.PI * 2);
+        c.fillStyle = "rgba(21,102,255," + glow.toFixed(3) + ")";
+        c.fill();
+      }
+
+      if (!reduce) {
+        pulseTimer += dt;
+        if (pulseTimer > 0.7) {
+          pulseTimer = 0;
+          spawnPulse();
+        }
+        pulses = pulses.filter(function keep(p) { return p.t < 1; });
+        for (let k = 0; k < pulses.length; k++) {
+          const p = pulses[k];
+          p.t += dt * p.speed;
+          const A = nodes[p.a];
+          const B = nodes[p.b];
+          if (!A || !B) continue;
+          const x = A.x + (B.x - A.x) * p.t;
+          const y = A.y + (B.y - A.y) * p.t;
+          const fade = Math.sin(Math.min(p.t, 1) * Math.PI);
+          c.beginPath();
+          c.arc(x, y, 2.2, 0, Math.PI * 2);
+          c.fillStyle = "rgba(150,190,255," + (0.9 * fade).toFixed(3) + ")";
+          c.fill();
+        }
+      }
+
+      if (!reduce) raf = requestAnimationFrame(draw);
+    }
+
+    resize();
+    if (reduce) {
+      draw(0);
+    } else {
+      raf = requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", resize);
+    return function cleanup() {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
   return (
-    <section className="relative bg-[#1A1F35] overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-      <HeroNetwork />
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle, #1566FF, transparent 70%)" }} />
-
-      <div className="relative max-w-[1200px] mx-auto px-[32px] md:px-[48px] lg:px-[64px] pt-[112px] pb-[128px]">
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-[760px]">
-
-          <motion.div variants={fadeUp} className="mb-7 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold tracking-[0.12em] text-[#8B95B8] uppercase">
-              <ShieldCheck size={13} className="text-[#C7AA50]" />
-              Healthcare Data Science Portfolio
-            </span>
-            <SyntheticBadge variant="badge" />
-          </motion.div>
-
-          <motion.h1 variants={fadeUp} className="text-[2.75rem] md:text-[3.5rem] lg:text-[4rem] font-extrabold text-white leading-[1.05] tracking-[-0.02em] mb-7">
-            From realistic synthetic data to <span className="text-[#1566FF]">machine learning</span> solutions.
-          </motion.h1>
-
-          <motion.p variants={fadeUp} className="text-[1.125rem] text-[#8B95B8] leading-[1.7] max-w-[580px] mb-10">
-            End-to-end analytics and ML projects built on a fully synthetic dataset spanning 13 simulated lab sites — generated to mirror the structure of real diagnostic-lab data. The data is fabricated; the methods are real.
-          </motion.p>
-
-          <motion.div variants={fadeUp} className="flex flex-wrap gap-3 mb-24">
-            <Link href="/projects" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#1566FF] text-white font-semibold text-sm hover:bg-[#4273C0] transition-colors duration-200 cursor-pointer">
-              View All Projects
-              <ArrowRight size={15} />
-            </Link>
-            <Link href="/methodology" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-[#475175] text-[#D7DCEE] font-semibold text-sm hover:bg-[#475175]/30 transition-colors duration-200 cursor-pointer">
-              How It Works
-            </Link>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-10 border-t border-[#475175]/40">
-            {stats.map(function renderStat(stat) {
-              return (
-                <div key={stat.label}>
-                  <p className="text-[2rem] font-extrabold text-white font-mono tracking-tight leading-none mb-1.5">{stat.value}</p>
-                  <p className="text-xs text-[#8B95B8] font-medium tracking-wide">{stat.label}</p>
-                </div>
-              );
-            })}
-          </motion.div>
-
-        </motion.div>
-      </div>
-    </section>
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="absolute inset-0 w-full h-full pointer-events-none opacity-70"
+    />
   );
 }
