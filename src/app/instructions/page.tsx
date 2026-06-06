@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SyntheticBadge } from "@/components/SyntheticBadge";
-import { Terminal, Copy, Check, FileCode2 } from "lucide-react";
+import { Terminal, Copy, Check, FileCode2, Globe, FileText, NotebookPen } from "lucide-react";
 
 const GENERATOR_SOURCE = `#!/usr/bin/env python3
 """
@@ -355,30 +355,49 @@ if __name__ == "__main__":
     main()
 `;
 
-function CopyButton({ text }: { text: string }) {
+function SectionLabel(props: { number: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <span className="font-mono text-[11px] font-bold text-[#8B95B8] tracking-widest">{props.number}</span>
+      <span className="h-px flex-1 bg-[#E6E6E6] max-w-[40px]" />
+      <span className="font-mono text-[11px] font-semibold text-[#8B95B8] uppercase tracking-widest">{props.label}</span>
+    </div>
+  );
+}
+
+function CopyButton(props: { text: string }) {
   const [copied, setCopied] = useState(false);
   function onCopy() {
-    navigator.clipboard.writeText(text).then(function done() {
+    navigator.clipboard.writeText(props.text).then(function done() {
       setCopied(true);
       setTimeout(function reset() { setCopied(false); }, 1800);
     });
   }
   return (
-    <button
-      onClick={onCopy}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold bg-[#475175] text-white hover:bg-[#5A6486] transition-colors cursor-pointer"
-    >
+    <button onClick={onCopy} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold bg-[#475175] text-white hover:bg-[#5A6486] transition-colors cursor-pointer">
       {copied ? <Check size={13} /> : <Copy size={13} />}
       {copied ? "Copied" : "Copy script"}
     </button>
   );
 }
 
-const produces = [
-  { k: "13 synthetic sites", v: "client_syn_01 through client_syn_13, each a folder of Excel files." },
-  { k: "6 tables", v: "patients, orders, order_items, patient_services, patient_service_results, plus support_tickets (site 03) and soap_analytics (site 11)." },
-  { k: "Engineered signal", v: "Every project has a real, recoverable pattern built in — abnormal rates, turnaround spikes, visit segments, test bundles, and more." },
-  { k: "Playful labels", v: "A fraction of patient names and addresses are pop-culture / fantasy easter eggs, so no row reads as a real person." },
+const setupSteps = [
+  { step: "01", title: "Fork & clone the repository", desc: "Fork this repo to your own GitHub account, then clone it locally." },
+  { step: "02", title: "Install dependencies", desc: "Run pnpm install in the project root. Node 18+ required." },
+  { step: "03", title: "Start the dev server", desc: "Run pnpm dev and open localhost:3000 to see your local copy." },
+];
+
+const buildSteps = [
+  { step: "01", title: "Edit project metadata", desc: "Open src/content/projects.ts and update the ProjectMeta object for your project — title, tagline, difficulty, techniques, key metric." },
+  { step: "02", title: "Write your project content", desc: "Open src/content/project-details.ts and fill in the six sections: business problem, data sources, methodology, analysis, insights, future improvements." },
+  { step: "03", title: "Add your results", desc: "Drop your computed chart data into the analysis.charts array (label/value pairs). The project page renders them as bars automatically." },
+  { step: "04", title: "Deploy your own version", desc: "Push to your GitHub, then import the repo into your own Vercel account. You get your own live URL for your resume." },
+];
+
+const deliverables = [
+  { icon: Globe, title: "A web app", desc: "Fork this site and publish your version on Vercel — the most portfolio-friendly option, and what this template is built for." },
+  { icon: FileText, title: "A PDF report", desc: "Prefer a written report? Export your analysis and findings as a polished PDF. Totally fine." },
+  { icon: NotebookPen, title: "A notebook or deck", desc: "A clean Jupyter notebook or a short slide deck works too. Pick whatever tells your story best." },
 ];
 
 export default function InstructionsPage() {
@@ -388,67 +407,139 @@ export default function InstructionsPage() {
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#C7AA50]" />
         <div className="max-w-[1200px] mx-auto px-8 md:px-12 lg:px-16 pt-20 pb-20">
           <p className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[#8B95B8] uppercase mb-4">
-            Instructions
+            For Interns
           </p>
           <h1 className="text-[2.5rem] md:text-[3rem] font-extrabold text-white leading-[1.1] tracking-[-0.02em] mb-5">
-            Generate the dataset yourself.
+            How to fork this and build your own portfolio.
           </h1>
-          <p className="text-[1.0625rem] text-[#8B95B8] max-w-[640px] leading-[1.7]">
-            The entire dataset behind this site comes from one self-contained Python script. Run it and you get the same thirteen sites — no external data, no network, no secrets.
+          <p className="text-[1.0625rem] text-[#8B95B8] max-w-[620px] leading-[1.7]">
+            This site is a reference implementation. Use it as a template: keep the structure, swap in your own analysis on the synthetic data, and present your work however suits you best.
           </p>
         </div>
       </div>
 
       <SyntheticBadge variant="banner" />
 
-      <div className="max-w-[900px] mx-auto px-8 md:px-12 lg:px-16 py-16 space-y-14">
+      <div className="max-w-[820px] mx-auto px-8 md:px-12 lg:px-16 py-16 space-y-20">
 
+        {/* Overview */}
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Terminal size={18} className="text-[#1566FF]" />
-            <h2 className="text-[1.5rem] font-extrabold text-[#475175]">Quick start</h2>
-          </div>
-          <p className="text-[1rem] text-[#5A6173] leading-relaxed mb-5">
-            Requires Python 3.9+ with <code className="font-mono text-[0.9rem] text-[#1566FF]">pandas</code>, <code className="font-mono text-[0.9rem] text-[#1566FF]">numpy</code>, <code className="font-mono text-[0.9rem] text-[#1566FF]">openpyxl</code>, and <code className="font-mono text-[0.9rem] text-[#1566FF]">faker</code>.
+          <SectionLabel number="01" label="Overview" />
+          <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-4">
+            What you are building.
+          </h2>
+          <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed">
+            Each of you will build your own version of this portfolio using one or more of the nine projects. The website structure, components, and design system are already built — your job is the data science: run the analysis on the synthetic data, produce results, and tell the story on your project page.
           </p>
-          <div className="rounded-xl bg-[#1A1F35] p-5 font-mono text-[13px] text-[#D7DCEE] leading-relaxed overflow-x-auto">
-            <p><span className="text-[#8B95B8]"># install dependencies</span></p>
-            <p className="mb-3">pip install pandas numpy openpyxl faker</p>
-            <p><span className="text-[#8B95B8]"># generate all 13 sites into ./synthetic-data</span></p>
-            <p>python generate_synthetic.py ./synthetic-data</p>
-            <p className="mb-3 text-[#8B95B8]">  # optional: --clients 13 --seed 42</p>
+        </section>
+
+        {/* The Data — Read First (yellow box) */}
+        <section>
+          <SectionLabel number="02" label="The Data — Read First" />
+          <div className="rounded-xl border-2 border-[#F0E068] bg-[#FFF9C4] p-6">
+            <p className="font-bold text-[#475175] text-[1.0625rem] mb-3">
+              I will hand you the dataset directly.
+            </p>
+            <p className="text-[0.9375rem] text-[#5A6173] leading-relaxed mb-3">
+              You don&apos;t need to generate anything to get started. I&apos;ll share the fabricated dataset with you through Google Drive — the same thirteen synthetic clients this site runs on. Because it&apos;s fully synthetic (no real patient or client anywhere), it&apos;s safe to use, publish, and put on your public portfolio.
+            </p>
+            <p className="text-[0.9375rem] text-[#5A6173] leading-relaxed">
+              That said — feel free to run <code className="font-mono text-[0.85rem] text-[#9C7A1A]">generate_synthetic.py</code> yourself (below) if you want to regenerate the data, change the random seed, or tweak it for your own ideas. It&apos;s optional, not required.
+            </p>
           </div>
         </section>
 
+        {/* How you present */}
         <section>
-          <h2 className="text-[1.5rem] font-extrabold text-[#475175] mb-5">What it produces</h2>
-          <div className="space-y-3">
-            {produces.map(function renderRow(p) {
+          <SectionLabel number="03" label="How You Present Your Work" />
+          <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-4">
+            Your findings, your format.
+          </h2>
+          <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed mb-7">
+            How you present is up to you. What matters is a clear, honest end-to-end story — problem, data, method, results, and what you&apos;d do next.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {deliverables.map(function renderDeliverable(d) {
+              const Icon = d.icon;
               return (
-                <div key={p.k} className="p-5 rounded-xl border border-[#E6E6E6] bg-white">
-                  <p className="font-semibold text-[#1A1F35] text-[0.9375rem] mb-1">{p.k}</p>
-                  <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">{p.v}</p>
+                <div key={d.title} className="p-5 rounded-xl border border-[#E6E6E6] bg-white">
+                  <div className="w-9 h-9 rounded-lg bg-[#ECF2FE] flex items-center justify-center mb-3">
+                    <Icon size={17} className="text-[#1566FF]" />
+                  </div>
+                  <p className="font-semibold text-[#1A1F35] text-[0.9375rem] mb-1">{d.title}</p>
+                  <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">{d.desc}</p>
                 </div>
               );
             })}
           </div>
         </section>
 
+        {/* Setup */}
         <section>
+          <SectionLabel number="04" label="Setup" />
+          <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-6">
+            Get the project running locally.
+          </h2>
+          <div className="space-y-3">
+            {setupSteps.map(function renderStep(s) {
+              return (
+                <div key={s.step} className="flex gap-4 p-5 rounded-xl bg-white border border-[#E6E6E6]">
+                  <span className="font-mono text-[11px] font-bold text-[#8B95B8] tracking-widest flex-shrink-0 pt-0.5">{s.step}</span>
+                  <div>
+                    <p className="font-semibold text-[#1A1F35] text-[0.9375rem] mb-1">{s.title}</p>
+                    <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Generator (optional) */}
+        <section>
+          <SectionLabel number="05" label="The Generator (Optional)" />
           <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <FileCode2 size={18} className="text-[#1566FF]" />
-              <h2 className="text-[1.5rem] font-extrabold text-[#475175]">generate_synthetic.py</h2>
+              <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight">generate_synthetic.py</h2>
             </div>
             <CopyButton text={GENERATOR_SOURCE} />
           </div>
-          <p className="text-[1rem] text-[#5A6173] leading-relaxed mb-5">
-            The complete generator. Distribution parameters are baked in; it reads no external data at runtime, which is why it is safe to publish and share.
+          <p className="text-[1.0625rem] text-[#5A6173] leading-relaxed mb-5">
+            The entire dataset comes from this one self-contained script. It reads no external data and keeps no secrets — distribution parameters are baked in. Run it to reproduce the same thirteen clients, or change the seed for fresh data.
           </p>
+          <div className="rounded-xl bg-[#1A1F35] p-5 font-mono text-[13px] text-[#D7DCEE] leading-relaxed overflow-x-auto mb-5">
+            <p><span className="text-[#8B95B8]"># install dependencies</span></p>
+            <p className="mb-3">pip install pandas numpy openpyxl faker</p>
+            <p><span className="text-[#8B95B8]"># generate all 13 clients into ./synthetic-data</span></p>
+            <p>python generate_synthetic.py ./synthetic-data</p>
+            <p className="text-[#8B95B8]">  # optional: --clients 13 --seed 42</p>
+          </div>
           <div className="rounded-xl border border-[#E6E6E6] bg-[#0F1322] overflow-hidden">
-            <pre className="p-5 overflow-x-auto max-h-[640px] overflow-y-auto text-[12px] leading-[1.6] font-mono text-[#C9D3F0]">
+            <pre className="p-5 overflow-x-auto max-h-[560px] overflow-y-auto text-[12px] leading-[1.6] font-mono text-[#C9D3F0]">
               <code>{GENERATOR_SOURCE}</code>
             </pre>
+          </div>
+        </section>
+
+        {/* Build your project */}
+        <section>
+          <SectionLabel number="06" label="Build Your Project" />
+          <h2 className="text-[1.75rem] font-extrabold text-[#475175] leading-tight mb-6">
+            From analysis to published page.
+          </h2>
+          <div className="space-y-3">
+            {buildSteps.map(function renderStep(s) {
+              return (
+                <div key={s.step} className="flex gap-4 p-5 rounded-xl bg-white border border-[#E6E6E6]">
+                  <span className="font-mono text-[11px] font-bold text-[#8B95B8] tracking-widest flex-shrink-0 pt-0.5">{s.step}</span>
+                  <div>
+                    <p className="font-semibold text-[#1A1F35] text-[0.9375rem] mb-1">{s.title}</p>
+                    <p className="text-[0.875rem] text-[#5A6173] leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
