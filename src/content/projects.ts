@@ -101,8 +101,8 @@ export const projects: ProjectMeta[] = [
     status: "complete",
     clients: ["Clients 02 & 13 (Imaging)"],
     tables: ["patient_service_results"],
-    techniques: ["Regex Extraction", "Multilingual NLP", "Bahasa Indonesia"],
-    keyMetric: { value: "61%", label: "Normal Findings" },
+    techniques: ["Keyword Baseline", "TF-IDF + LogReg", "Multilingual NLP"],
+    keyMetric: { value: "86%", label: "NLP Accuracy" },
     color: "bg-[#FCE4EC]",
   },
   {
