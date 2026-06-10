@@ -6,7 +6,7 @@ import { Terminal, Copy, Check, FileCode2, Globe, FileText, NotebookPen } from "
 
 const GENERATOR_SOURCE = `#!/usr/bin/env python3
 """
-generate_synthetic.py - Dashlabs Synthetic Dataset Generator (engineered)
+generate_synthetic.py - Synthetic Healthcare Dataset Generator (engineered)
 =========================================================================
 
 Generates 13 FULLY SYNTHETIC healthcare-operations "clients" for the data
@@ -136,16 +136,73 @@ SOAP_TOPICS = {
 SOAP_SEVERITY = ["mild", "moderate", "severe"]
 
 # ---------------------------------------------------------------- RADIOLOGY (P8)
-RADIOLOGY_IMPRESSIONS = [
-    ("normal", "Hepar normal, ginjal normal, vesica fellea normal. Tidak tampak kelainan."),
-    ("normal", "Cor dan pulmo dalam batas normal. No active lung lesion."),
-    ("normal", "USG abdomen dalam batas normal."),
-    ("abnormal", "Hepatomegali ringan dengan fatty liver grade I."),
-    ("abnormal", "Tampak efusi pleura minimal pada hemithorax kanan."),
-    ("abnormal", "Cardiomegaly dengan CTR 0.58."),
-    ("abnormal", "Nephrolithiasis pada ginjal kiri, ukuran 0.6 cm."),
-    ("abnormal", "Cholelithiasis multiple pada vesica fellea."),
-]
+# A finding is composed per-organ from many surface forms (EN + Bahasa), so the
+# same underlying finding is written dozens of ways. This gives a rule-based
+# parser clean targets AND gives an NLP model real lexical variety to learn from
+# (train/test do not overlap on identical strings). The ground-truth normal/
+# abnormal label is recorded separately as rad_label so evaluation cannot cheat.
+RAD_ORGANS = {
+    "hepar": {
+        "normal": ["hepar normal", "hepar dalam batas normal", "liver unremarkable",
+                   "liver size normal", "no hepatomegaly", "hepar tidak membesar"],
+        "abnormal": ["hepatomegali", "hepatomegaly", "fatty liver grade I", "perlemakan hati",
+                     "hepatic steatosis", "hepar membesar", "fatty liver grade II"],
+    },
+    "ginjal": {
+        "normal": ["ginjal normal bilateral", "both kidneys normal", "ginjal kanan dan kiri normal",
+                   "no nephrolithiasis", "ginjal dalam batas normal"],
+        "abnormal": ["nephrolithiasis", "batu ginjal kiri", "renal cyst", "kista ginjal kanan",
+                     "hydronephrosis", "nephrolithiasis ginjal kiri ukuran 0.6 cm", "hidronefrosis ringan"],
+    },
+    "vesica": {
+        "normal": ["vesica fellea normal", "gallbladder unremarkable", "tidak tampak batu empedu",
+                   "vesica fellea tidak tampak kelainan"],
+        "abnormal": ["cholelithiasis", "kolelitiasis", "gallstones", "batu empedu multiple",
+                     "cholecystitis", "kolelitiasis soliter"],
+    },
+    "cor": {
+        "normal": ["cor normal", "heart size normal", "CTR normal", "tidak tampak kardiomegali",
+                   "cor tidak membesar"],
+        "abnormal": ["cardiomegaly", "kardiomegali", "cardiomegaly dengan CTR 0.58",
+                     "enlarged cardiac silhouette", "cor membesar", "kardiomegali dengan CTR meningkat"],
+    },
+    "pulmo": {
+        "normal": ["pulmo dalam batas normal", "lungs clear", "no active lung lesion",
+                   "tidak tampak infiltrat", "pulmo tidak tampak kelainan"],
+        "abnormal": ["infiltrat pada lobus kanan", "pneumonia", "TB lesion suspek",
+                     "fibrosis paru", "infiltrat perihiler", "bronchopneumonia"],
+    },
+    "pleura": {
+        "normal": ["sinus costophrenicus tajam", "no pleural effusion", "pleura normal"],
+        "abnormal": ["efusi pleura minimal kanan", "pleural effusion bilateral",
+                     "penebalan pleura", "efusi pleura"],
+    },
+}
+RAD_PREFIX = ["", "", "", "Kesan: ", "Impression: ", "Hasil: ", "USG: ", "Foto thorax: "]
+RAD_SUFFIX = [" Disarankan pemeriksaan lanjutan.", " Suggest clinical correlation.",
+              " Saran USG ulang.", " Korelasi klinis dianjurkan."]
+
+def make_impression(rng):
+    keys = list(RAD_ORGANS.keys())
+    n = rng.choice([2, 3, 3, 4])
+    chosen = rng.sample(keys, n)
+    parts, any_abn = [], False
+    for organ in chosen:
+        if rng.random() < 0.15:
+            parts.append(rng.choice(RAD_ORGANS[organ]["abnormal"])); any_abn = True
+        else:
+            parts.append(rng.choice(RAD_ORGANS[organ]["normal"]))
+    rng.shuffle(parts)
+    if not any_abn and rng.random() < 0.25:
+        parts = [rng.choice(["tidak tampak kelainan", "dalam batas normal", "normal study"])]
+    sep = rng.choice([", ", ". ", "; "])
+    text = rng.choice(RAD_PREFIX) + sep.join(parts)
+    if any_abn and rng.random() < 0.3:
+        text += rng.choice(RAD_SUFFIX)
+    text = text[0].upper() + text[1:] if text else text
+    if not text.endswith("."):
+        text += "."
+    return text, ("abnormal" if any_abn else "normal")
 
 # ---------------------------------------------------------------- HELPERS
 def hid(rng):
@@ -264,7 +321,7 @@ def gen_client(idx, prof, out_dir, rng, fake):
                 # results (P1): abnormality from age + service + site
                 row = dict(_id=hid(rng), patient_service_id=psid, patient_id=pid, service_name=sv,
                            number_value=None, ref_range_min=None, ref_range_max=None,
-                           unit=meta["unit"], word_value=None)
+                           unit=meta["unit"], word_value=None, rad_label=None)
                 if meta["lo"] is not None:
                     p = sigmoid(-1.15 + SERVICE_LOGIT.get(sv, 0.0)
                                 + 0.050 * (age - 45) + 3.0 * prof["abn_offset"])
@@ -277,9 +334,9 @@ def gen_client(idx, prof, out_dir, rng, fake):
                         val = rng.uniform(lo, hi)
                     row.update(number_value=round(val, 2), ref_range_min=lo, ref_range_max=hi)
                 elif sv in ("USG Abdomen", "Rontgen Dada", "Ultrasound"):
-                    tag, txt = rng.choices(RADIOLOGY_IMPRESSIONS,
-                                           weights=[3, 3, 3, 1.4, 1, 1, 0.8, 0.8], k=1)[0]
+                    txt, rlabel = make_impression(rng)
                     row["word_value"] = txt
+                    row["rad_label"] = rlabel
                 results.append(row)
 
     tables = {
@@ -342,7 +399,7 @@ def main():
     rng = random.Random(a.seed); np.random.seed(a.seed)
     fake = Faker(); Faker.seed(a.seed)
     profs = client_profiles(rng)
-    print("Dashlabs Synthetic Generator (engineered) - {} clients (seed {})".format(a.clients, a.seed))
+    print("Synthetic Healthcare Dataset Generator (engineered) - {} clients (seed {})".format(a.clients, a.seed))
     print("100% synthetic. No real data is read. Safe to publish.")
     print("-" * 60)
     for i in range(a.clients):
